@@ -1,0 +1,110 @@
+/* Typography — Cormorant Garamond (display) + DM Sans (functional) */
+.display,
+.h-xl,
+.h-lg,
+.h-md,
+.h-sm {
+  font-family: var(--font-display);
+  font-weight: 400;
+  color: inherit;
+  margin: 0;
+  text-wrap: balance;
+}
+.display {
+  font-size: clamp(50px, 8.2vw, 116px);
+  line-height: 0.97;
+  letter-spacing: -0.018em;
+}
+.h-xl {
+  font-size: clamp(44px, 6.4vw, 92px);
+  line-height: 1;
+  letter-spacing: -0.015em;
+}
+.h-lg {
+  font-size: clamp(38px, 4.6vw, 64px);
+  line-height: 1.04;
+  letter-spacing: -0.012em;
+}
+.h-md {
+  font-size: clamp(30px, 3.1vw, 44px);
+  line-height: 1.1;
+  letter-spacing: -0.008em;
+}
+.h-sm {
+  font-size: clamp(24px, 2.2vw, 30px);
+  line-height: 1.15;
+}
+.display em,
+.h-xl em,
+.h-lg em,
+.h-md em {
+  font-style: italic;
+  font-weight: 400;
+}
+.numeral {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(44px, 5vw, 72px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.eyebrow,
+.meta {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  line-height: 1.5;
+  margin: 0;
+}
+.eyebrow {
+  color: var(--stone);
+}
+.eyebrow--olive {
+  color: var(--olive);
+}
+.eyebrow--terra {
+  color: var(--terracotta);
+}
+.meta {
+  letter-spacing: 0.14em;
+  color: var(--stone);
+}
+.on-dark .eyebrow,
+.on-dark .meta {
+  color: var(--on-dark-muted);
+}
+
+.lede {
+  font-size: clamp(17px, 1.5vw, 19px);
+  line-height: 1.65;
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: 52ch;
+}
+.body,
+.prose p {
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--ink-soft);
+  margin: 0 0 1.2em;
+  max-width: 58ch;
+}
+.small {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--stone);
+}
+.on-dark .lede,
+.on-dark .body,
+.on-dark .prose p {
+  color: var(--on-dark-muted);
+}
+.price {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,50 @@
+/* THE STILLHOUSE — design tokens. Single source of truth. */
+:root {
+  /* Colour */
+  --limestone: #f1efe8;
+  --parchment: #e8e4da;
+  --ink: #242722;
+  --stone: #77786f;
+  --olive: #535b45;
+  --terracotta: #a66f56;
+  --charcoal: #252823;
+  --warm-white: #f1efe8;
+  --border: #d7d3c9;
+  --white: #ffffff;
+
+  /* Functional derivatives (opacity of the tokens above, not new hues) */
+  --ink-soft: rgba(36, 39, 34, 0.78);
+  --on-dark: #f1efe8;
+  --on-dark-muted: rgba(241, 239, 232, 0.64);
+  --border-dark: rgba(241, 239, 232, 0.16);
+  --scrim: rgba(24, 26, 22, 0.34);
+  --error: #a4452f; /* functional: form errors only */
+
+  /* Type */
+  --font-display: "Cormorant Garamond", "Cormorant", Georgia, "Times New Roman", serif;
+  --font-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Layout */
+  --max: 1440px;
+  --pad-x: clamp(20px, 5.2vw, 80px);
+  --gutter: clamp(16px, 2.2vw, 32px);
+  --nav-h: 76px;
+
+  /* Spacing scale */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
+  --section-y: clamp(80px, 10vw, 160px);
+
+  /* Shape + motion */
+  --radius: 2px;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --t-fast: 0.25s;
+  --t-base: 0.45s;
+}
