@@ -1,0 +1,40 @@
+# The Stillhouse - local development services.
+# Production topology is decided in M7. This file is for local dev only.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: stillhouse-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: stillhouse
+      POSTGRES_PASSWORD: stillhouse_dev_password
+      POSTGRES_DB: stillhouse
+    ports:
+      - "5432:5432"
+    volumes:
+      - stillhouse_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stillhouse -d stillhouse"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  db_test:
+    image: postgres:16-alpine
+    container_name: stillhouse-db-test
+    environment:
+      POSTGRES_USER: stillhouse
+      POSTGRES_PASSWORD: stillhouse_dev_password
+      POSTGRES_DB: stillhouse_test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stillhouse -d stillhouse_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  stillhouse_db_data:

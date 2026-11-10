@@ -1,0 +1,32 @@
+{
+  "name": "hotel-booking-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Stillhouse - single-property boutique hotel booking platform (React+Vite frontend, Express+Prisma+PostgreSQL backend)",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace=@stillhouse/web",
+    "dev:api": "npm run dev --workspace=@stillhouse/api",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:e2e": "npx playwright test",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose stop db",
+    "db:migrate": "npx prisma migrate dev",
+    "db:seed": "node prisma/seed.js",
+    "db:reset": "npx prisma migrate reset"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "prisma": "^6.19.3",
+    "vitest": "^5.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
