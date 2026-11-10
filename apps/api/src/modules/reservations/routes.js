@@ -7,6 +7,8 @@ import { requireAuth, isStaff, validate } from '../../middleware/index.js';
 import { badRequest, forbidden, notFound, unauthorized } from '../../lib/errors.js';
 import { releaseAllocations } from '../../lib/allocations.js';
 import { audit } from '../../lib/audit.js';
+import { accountPayload } from '../../lib/account.js';
+import { updateProfileSchema } from '@stillhouse/shared';
 
 export const reservationsRouter = Router();
 export const accountRouter = Router();
@@ -14,7 +16,7 @@ export const accountRouter = Router();
 const STATUS_LABEL = { pending: 'Pending', confirmed: 'Confirmed', checked_in: 'Checked-in', checked_out: 'Checked-out', cancelled: 'Cancelled', expired: 'Expired' };
 
 export const toListItem = (r, roomNumbers = []) => ({
-  id: String(r.id),
+  id: r.reference, // client-side identifier used across admin pages
   reference: r.reference,
   roomName: r.roomType?.name,
   roomSlug: r.roomType?.slug,
@@ -154,5 +156,28 @@ accountRouter.get('/account/reservations', requireAuth, async (req, res, next) =
     const upcoming = mapped.filter((r) => r.departure >= today && !['Cancelled', 'Expired', 'Checked-out'].includes(r.status)).sort((a, b) => a.arrival.localeCompare(b.arrival));
     const previous = mapped.filter((r) => !upcoming.includes(r));
     res.json({ upcoming, previous });
+  } catch (err) { next(err); }
+});
+
+accountRouter.put('/account/profile', requireAuth, validate(updateProfileSchema), async (req, res, next) => {
+  try {
+    const { firstName, lastName, phone, country, notes } = req.validatedBody;
+    if (!req.auth.guest) throw notFound('No guest profile attached to this account.');
+    const guest = await prisma.guest.update({
+      where: { id: req.auth.guest.id },
+      data: {
+        ...(firstName != null ? { firstName } : {}),
+        ...(lastName != null ? { lastName } : {}),
+        ...(phone != null ? { phone } : {}),
+        ...(country != null ? { country } : {}),
+        ...(notes != null ? { notes } : {}),
+      },
+    });
+    let user = req.auth.user;
+    if (firstName != null || lastName != null) {
+      const name = `${guest.firstName} ${guest.lastName}`.trim();
+      user = await prisma.user.update({ where: { id: user.id }, data: { name }, include: { roles: { include: { role: true } } } });
+    }
+    res.json({ account: accountPayload(user, guest) });
   } catch (err) { next(err); }
 });

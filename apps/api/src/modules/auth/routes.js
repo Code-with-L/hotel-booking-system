@@ -1,4 +1,4 @@
-// Authentication: register, sign-in, sign-out, me, profile, password reset.
+// Authentication: register, sign-in, sign-out, me, password reset.
 import { Router } from 'express';
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
@@ -6,9 +6,10 @@ import { prisma } from '../../lib/prisma.js';
 import { env } from '../../config/env.js';
 import { hashToken, requireAuth, authLimiter, SESSION_COOKIE } from '../../middleware/index.js';
 import { validate } from '../../middleware/index.js';
-import { signInSchema, registerSchema, updateProfileSchema } from '@stillhouse/shared';
-import { ApiError, badRequest, unauthorized, notFound } from '../../lib/errors.js';
+import { signInSchema, registerSchema } from '@stillhouse/shared';
+import { ApiError, badRequest, unauthorized } from '../../lib/errors.js';
 import { audit } from '../../lib/audit.js';
+import { accountPayload } from '../../lib/account.js';
 
 export const authRouter = Router();
 
@@ -36,19 +37,6 @@ async function createSession(userId, req) {
   });
   return token;
 }
-
-const accountPayload = (user, guest) => ({
-  id: user.id,
-  guestId: guest?.id ?? null,
-  firstName: guest?.firstName ?? user.name.split(' ')[0] ?? user.name,
-  lastName: guest?.lastName ?? user.name.split(' ').slice(1).join(' ') ?? '',
-  name: user.name,
-  email: user.email,
-  phone: guest?.phone ?? '',
-  country: guest?.country ?? 'Kenya',
-  notes: guest?.notes ?? '',
-  roles: user.roles.map((ur) => ur.role.key),
-});
 
 authRouter.post('/register', authLimiter, validate(registerSchema), async (req, res, next) => {
   try {
@@ -109,30 +97,6 @@ authRouter.get('/me', requireAuth, (req, res) => {
   res.json({ account: accountPayload(req.auth.user, req.auth.guest) });
 });
 
-authRouter.put('/account/profile', requireAuth, validate(updateProfileSchema), async (req, res, next) => {
-  try {
-    const { firstName, lastName, phone, country, notes } = req.validatedBody;
-    if (req.auth.guest) {
-      const guest = await prisma.guest.update({
-        where: { id: req.auth.guest.id },
-        data: {
-          ...(firstName != null ? { firstName } : {}),
-          ...(lastName != null ? { lastName } : {}),
-          ...(phone != null ? { phone } : {}),
-          ...(country != null ? { country } : {}),
-          ...(notes != null ? { notes } : {}),
-        },
-      });
-      if (firstName != null || lastName != null) {
-        const name = `${guest.firstName} ${guest.lastName}`.trim();
-        await prisma.user.update({ where: { id: req.auth.user.id }, data: { name } });
-      }
-      return res.json({ account: accountPayload({ ...req.auth.user, name: `${guest.firstName} ${guest.lastName}`.trim() }, guest) });
-    }
-    throw notFound('No guest profile attached to this account.');
-  } catch (err) { next(err); }
-});
-
 // Password reset: only available when an email provider is configured. Otherwise 503 - never fake an email being sent.
 authRouter.post('/forgot-password', authLimiter, async (req, res, next) => {
   try {
@@ -147,7 +111,6 @@ authRouter.post('/forgot-password', authLimiter, async (req, res, next) => {
       await prisma.passwordResetToken.create({
         data: { userId: user.id, tokenHash: hashToken(raw), expiresAt: new Date(Date.now() + 60 * 60 * 1000) },
       });
-      // NOTE: email dispatch intentionally not implemented in M1 (no provider). Factory below is the integration point.
       const { sendPasswordReset } = await import('../notifications/email.js');
       await sendPasswordReset({ to: user.email, token: raw });
     }

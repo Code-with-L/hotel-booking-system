@@ -234,7 +234,12 @@ adminRouter.get('/admin/guests', requireRole('receptionist', 'manager', 'admin')
     const where = q ? { OR: [{ firstName: { contains: q, mode: 'insensitive' } }, { lastName: { contains: q, mode: 'insensitive' } }, { email: { contains: q, mode: 'insensitive' } }] } : {};
     const guests = await prisma.guest.findMany({
       where,
-      include: { reservations: { select: { status: true, checkIn: true, totalMinor: true } } },
+      include: {
+        reservations: {
+          include: { roomType: true, ratePlan: true, roomsAssigned: { include: { room: true } } },
+          orderBy: { checkIn: 'desc' },
+        },
+      },
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
@@ -249,6 +254,7 @@ adminRouter.get('/admin/guests', requireRole('receptionist', 'manager', 'admin')
       createdAt: g.createdAt.toISOString(),
       totalStays: g.reservations.filter((r) => ['confirmed', 'checked_in', 'checked_out'].includes(r.status)).length,
       memberSince: g.createdAt.toISOString(),
+      reservations: g.reservations.map((r) => toListItem(r, roomNumbersOf(r))),
     })));
   } catch (err) { next(err); }
 });
@@ -267,7 +273,7 @@ adminRouter.get('/admin/guests/:id', requireRole('receptionist', 'manager', 'adm
 });
 
 // ---------- Rates ----------
-const STATUS_OUT = { active: 'Active', scheduled: 'Scheduled', inactive: 'Inactive' };
+const STATUS_OUT = { active: 'Active', scheduled: 'Scheduled', inactive: 'Paused' };
 const STATUS_IN = Object.fromEntries(Object.entries(STATUS_OUT).map(([k, v]) => [v.toLowerCase(), k]));
 
 adminRouter.get('/admin/rates', requireRole('manager', 'admin'), async (_req, res, next) => {

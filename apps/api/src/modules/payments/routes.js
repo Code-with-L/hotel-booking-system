@@ -98,7 +98,6 @@ webhooksRouter.post('/webhooks/mpesa', async (req, res) => {
     const resultCode = Number(cb.ResultCode);
     const items = cb?.CallbackMetadata?.Item || [];
     const amount = Number(items.find((i) => i?.Name === 'Amount')?.Value);
-    const receipt = items.find((i) => i?.Name === 'MpesaReceiptNumber')?.Value || null;
 
     const payment = await prisma.payment.findUnique({ where: { providerReference: checkoutRequestId }, include: { reservation: true } });
     if (!payment) return reply(1, 'Unknown transaction');
@@ -122,7 +121,9 @@ webhooksRouter.post('/webhooks/mpesa', async (req, res) => {
       });
 
       if (resultCode === 0 && Number.isFinite(amount) && Math.round(amount * 100) === payment.amountMinor) {
-        await tx.payment.update({ where: { id: payment.id }, data: { status: 'succeeded', capturedAt: new Date(), providerReference: receipt || checkoutRequestId } });
+        // Keep providerReference as the CheckoutRequestID (stable lookup key). The receipt number
+        // is preserved in payment_attempt.raw_payload and never needed for idempotency.
+        await tx.payment.update({ where: { id: payment.id }, data: { status: 'succeeded', capturedAt: new Date() } });
         await confirmReservationTx(tx, { reservation: payment.reservation, ip: req.ip, note: 'mpesa webhook' });
       } else {
         const reason = resultCode === 0 ? 'Amount mismatch' : (cb.ResultDesc || 'Payment failed or cancelled');

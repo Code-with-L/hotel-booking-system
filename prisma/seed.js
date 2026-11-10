@@ -126,6 +126,123 @@ async function main() {
     await prisma.roomAllocation.create({ data: { roomId: room.id, checkIn: block.checkIn, checkOut: block.checkOut, kind: 'block', state: 'occupying', sourceType: 'inventory_block', sourceId: block.id } });
   }
 
+  // --- Demo reservation history & future bookings (fixtures; deterministic) ---
+  // Only generated when the reservation table is empty. Real allocations are created through the
+  // same "room_allocation" ledger as live bookings, so availability/admin/reports all reflect them.
+  const existingReservations = await prisma.reservation.count();
+  if (existingReservations === 0) {
+    const rng = (() => { let s = 42; return () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; }; })();
+    const pick = (arr) => arr[Math.floor(rng() * arr.length)];
+    const GUEST_LIST = [
+      ['Naomi', 'Achieng'], ['James', 'Mwangi'], ['Faith', 'Wanjiru'], ['Peter', 'Otieno'],
+      ['Grace', 'Nyambura'], ['David', 'Kibet'], ['Sarah', 'Chebet'], ['Daniel', 'Muthoni'],
+      ['Lucy', 'Akinyi'], ['Samuel', 'Kamau'], ['Esther', 'Wambui'], ['Brian', 'Odhiambo'],
+    ];
+    const guests = [];
+    for (const [firstName, lastName] of GUEST_LIST) {
+      const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`;
+      const g = await prisma.guest.upsert({
+        where: { email },
+        create: { firstName, lastName, email, phone: `+254 7${String(Math.floor(rng() * 90) + 10)}0 ${String(Math.floor(rng() * 900) + 100)}${String(Math.floor(rng() * 90) + 10)}`, country: 'Kenya' },
+        update: {},
+      });
+      guests.push(g);
+    }
+
+    const types = await prisma.roomType.findMany({ include: { rooms: true, ratePlans: true } });
+    const TYPE_WEIGHTS = [0.5, 0.32, 0.18]; // garden, valley, signature
+    const pickType = () => {
+      const r = rng();
+      return r < TYPE_WEIGHTS[0] ? types[0] : r < TYPE_WEIGHTS[0] + TYPE_WEIGHTS[1] ? types[1] : types[2];
+    };
+    const iso = (d) => d.toISOString().slice(0, 10);
+    const addDaysLocal = (d, n) => { const x = new Date(d); x.setUTCDate(x.getUTCDate() + n); return x; };
+    const hundred = (n) => Math.round(n / 10000) * 10000;
+
+    let created = 0;
+    const target = 34;
+    for (let i = 0; created < target && i < 200; i += 1) {
+      const type = pickType();
+      const guest = pick(guests);
+      const dayOffset = Math.floor(rng() * 110) - 40; // -40..+70 days from today
+      const checkIn = addDaysLocal(T, dayOffset);
+      const nights = 1 + Math.floor(rng() * 4);
+      const checkOut = addDaysLocal(checkIn, nights);
+      const plan = pick(type.ratePlans);
+      const base = hundred(Math.round(type.fromPriceMinor * plan.multiplier));
+      const nightly = hundred(Math.round(base * (pick([1, 1, 1, 1.25]))));
+      const subtotal = nightly * nights;
+      const serviceCharge = Math.round(subtotal * 0.10);
+      const tourismLevy = Math.round(subtotal * 0.02);
+      const vat = Math.round(subtotal * 0.16);
+      const total = subtotal + serviceCharge + tourismLevy + vat;
+
+      const todayUTC = new Date(Date.UTC(T.getUTCFullYear(), T.getUTCMonth(), T.getUTCDate()));
+      const status = checkOut < todayUTC ? 'checked_out' : checkIn <= todayUTC && checkOut > todayUTC ? 'checked_in' : rng() < 0.85 ? 'confirmed' : 'cancelled';
+      const desiredRooms = 1;
+      const rooms = type.rooms.slice().sort((a, b) => a.number.localeCompare(b.number));
+      let placed = null;
+      if (status !== 'cancelled') {
+        for (const room of rooms) {
+          try {
+            const existing = await prisma.$queryRaw`
+              SELECT 1 FROM room_allocation
+              WHERE room_id = ${room.id} AND state = 'occupying'
+                AND check_in < ${iso(checkOut)}::date AND check_out > ${iso(checkIn)}::date
+              LIMIT 1`;
+            if (existing.length) continue;
+            placed = room;
+            break;
+          } catch { /* try next room */ }
+        }
+        if (!placed) continue; // fully blocked for these dates; skip this fixture
+      }
+
+      const reservation = await prisma.reservation.create({
+        data: {
+          reference: `STL-${T.getUTCFullYear()}-S${String(10000 + i).slice(1)}${String(Math.floor(rng() * 90) + 10)}`,
+          guestId: guest.id,
+          roomTypeId: type.id,
+          ratePlanId: plan.id,
+          status,
+          checkIn,
+          checkOut,
+          nights,
+          adults: 2,
+          children: 0,
+          rooms: desiredRooms,
+          nightlyMinor: nightly,
+          subtotalMinor: subtotal,
+          serviceChargeMinor: serviceCharge,
+          tourismLevyMinor: tourismLevy,
+          vatMinor: vat,
+          totalMinor: total,
+          source: 'web',
+          idempotencyKey: `seed-${i}`,
+          confirmedAt: status === 'checked_out' || status === 'checked_in' || status === 'confirmed' ? new Date(checkIn.getTime() - 3 * 86400000) : null,
+          checkedInAt: status === 'checked_in' || status === 'checked_out' ? checkIn : null,
+          checkedOutAt: status === 'checked_out' ? checkOut : null,
+          createdAt: new Date(checkIn.getTime() - Math.floor(rng() * 20 + 5) * 86400000),
+        },
+      });
+      if (placed) {
+        await prisma.$executeRaw`
+          INSERT INTO room_allocation (room_id, check_in, check_out, kind, state, source_type, source_id, updated_at)
+          VALUES (${String(placed.id)}::bigint, ${iso(checkIn)}::date, ${iso(checkOut)}::date,
+                  'reservation'::"AllocationKind", 'occupying'::"AllocationState", 'reservation', ${String(reservation.id)}::bigint, now())`;
+        await prisma.reservationRoom.create({ data: { reservationId: reservation.id, roomId: placed.id } });
+      }
+      if (status === 'confirmed' || status === 'checked_in' || status === 'checked_out') {
+        const payment = await prisma.payment.create({
+          data: { reservationId: reservation.id, provider: 'manual', providerReference: `SEED-${reservation.id}`, amountMinor: total, status: 'succeeded', capturedAt: new Date(checkIn.getTime() - 2 * 86400000) },
+        });
+        await prisma.paymentAttempt.create({ data: { reservationId: reservation.id, paymentId: payment.id, provider: 'manual', providerReference: payment.providerReference, amountMinor: total, currency: 'KES', status: 'succeeded', verified: true, rawPayload: { seed: true } } });
+      }
+      created += 1;
+    }
+    console.log(`Seeded ${created} reservations across the diary.`);
+  }
+
   const counts = { roomTypes: await prisma.roomType.count(), rooms: await prisma.room.count(), rateCards: await prisma.rateCard.count(), users: await prisma.user.count() };
   console.log('Seed complete:', JSON.stringify(counts));
 }
