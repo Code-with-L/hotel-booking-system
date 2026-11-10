@@ -63,9 +63,20 @@ Arena exports are staged in `../arena-staging/` (sibling of repo root) and never
 OpenCode: backend engineering, integration, docs. Arena: visual frontend. AI never invents schema/relationships, never silently expands scope, never commits secrets, never marks features complete without tests. Milestone gates are mandatory.
 
 ## Open (owner decision required)
-- O-1 — Tax computation approval (TAX_AND_CHARGES.md §4). Blocks M4 pricing.
+- O-1 — Tax computation approval (TAX_AND_CHARGES.md §4). **Provisional approach implemented in M1**: configurable-by-code policy — SC 10%, Tourism Levy 2%, VAT 16% on net; SC and levy excluded from VAT base (VAT Act s.13(7)). Still needs your/accountant sign-off before real launch.
 - O-2 — Card provider choice (if/when): Flutterwave vs DPO vs Stripe.
 - O-3 — Production hosting & managed PostgreSQL provider (decide at M7).
 - O-4 — Photography: commissioned shoot vs licensed stock vs Arena-generated placeholders (launch blocker; see BUILD_PLAN R4).
 - O-5 — eTIMS scope for first real deployment (BUILD_PLAN R5).
-- O-6 — Confirmation access policy for non-account guests (session-only vs reference+email).
+- O-6 — Guest confirmation access policy. **Resolved in M1**: confirmation page shows reference + status; guest retrieval requires sign-in or reference+email.
+
+## M1 decisions (2026-11-11)
+- D-021 (2026-11-11) — Arena frontend located: `stillhouse-luxury-hospitality-website.zip` (Downloads) extracted to `../arena-staging/`, accepted into `apps/web/`. Next.js/TS/Drizzle shell debris removed from the web app; plain Vite + React + JS preserved intact otherwise.
+- D-022 (2026-11-11) — Prisma on Windows-on-ARM64 uses `engineType = "client"` (pure JS/WASM query compiler; native engine unavailable on this platform) + `@prisma/adapter-pg`. Migrations run via the x64-emulated schema engine; verified end-to-end.
+- D-023 (2026-11-11) — Vite pinned to ^6.4.6 + @vitejs/plugin-react ^4.7.0 (Vite 7/rolldown pre-transform crash: "Missing field moduleType").
+- D-024 (2026-11-11) — Concurrency: reservation creation retries the whole transaction on allocation conflict (PG aborts a tx on any constraint violation; an in-tx retry would hit 25P02). Randomised room assignment spreads load; DB exclusion constraint remains the arbiter. Verified: 8 parallel requests for 5 rooms → exactly 5 succeed, 3 × ROOM_UNAVAILABLE.
+- D-025 (2026-11-11) — Booking seed fixtures (34 deterministic reservations, 12 guests, allocations via the real ledger) are dev/demo fixtures, not production data. Production seed = hotel, 28 rooms, rate plans/cards, roles/users, settings only.
+- D-026 (2026-11-11) — Daraja STK push cannot be exercised without credentials: payments module ships the real client + truthful `MPESA_NOT_CONFIGURED` 503; webhook verifies structure/amount/reference and is idempotent; desk settlement is the operational payment path until M-Pesa is registered. Confirmation emails likewise unconfigured (`EMAIL_PROVIDER` unset → 503 on reset-by-email, not a fake send).
+- D-027 (2026-11-11) — No booking modification endpoint (change of dates/rooms): cancel + rebook is the supported flow; front-desk status changes are audit-logged. Arena UI has no modification surface. Reopen via DECISIONS.md if the business wants edit-in-place.
+- D-028 (2026-11-11) — Reservation references are also the admin list identifier; room numbers are shown to staff only (guest-facing rows show room name).
+- D-029 (2026-11-11) — `npm audit` (M1): 3 high — all in the dev-only Prisma CLI chain (`deepmerge-ts` ← `@prisma/config` ← `prisma`). Runtime dependencies clean. Fix requires Prisma 7 (breaking config) — deferred to M7 review; no production attack surface from this class in M1 scope.

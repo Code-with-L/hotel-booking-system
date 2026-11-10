@@ -1,5 +1,7 @@
 # Mock / Demonstration Data
 
+> **Superseded (2026-11-11, M1):** every mock dataset listed here is now backed by the live system — see `API_CONTRACTS.md` (v1.0) and `DECISIONS.md` D-024/D-025. `MOCK_DATA.md` is preserved for history and to document what the prototype faked. Guest-facing bookings now create real reservations; admin surfaces show real (seeded) fixtures; nothing on these pages claims payment without a verified provider result.
+
 Everything below is **fictional or illustrative**. None of it represents a real hotel, guest, price or booking.
 
 | Dataset | File | What is fake | Used by |

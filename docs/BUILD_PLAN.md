@@ -16,10 +16,10 @@
 Deliverable: approved project blueprint — documentation + repository hygiene. **No application code.**
 Exit: owner sign-off on blueprint; repo flattened; commits created.
 
-### M1 — Arena frontend generation & acceptance
-Arena generates the visual frontend from `ARENA_HANDOFF_BRIEF.md` + `DESIGN_SYSTEM.md` + `FRONTEND_MAP.md`.
-Deliverable: complete React+Vite source staged in `../arena-staging/`, graded against `HANDOFF_CHECKLIST.md` (run it: install, build, browse every route at 390/768/1024/1440, reduced-motion check, console clean, mock boundaries verified).
-Exit: checklist pass (sections 1–5 mandatory), owner acceptance → code moves to `apps/web/`. Then `API_CONTRACTS.md` is finalised against the delivered services seam.
+### M1 — Arena frontend + backend + integration ✅ (implemented 2026-11-11)
+Arena export located (`stillhouse-luxury-hospitality-website.zip`), staged in `../arena-staging/`, NEXT/TS debris removed, accepted into `apps/web/`. Backend built (Express + Prisma + PostgreSQL): authn/BCrypt sessions, RBAC, allocation-ledger reservation engine (exclusion constraint verified), M-Pesa boundary with truthful unconfigured state + desk settlement, full admin API. Frontend `src/services/*` and `AuthContext` rewired to the live API (quote computed server-side; holds created; session bootstrap; admin pages async). e2e green (guest book → held → staff confirm → guest sees confirmed), backend 17/17 green, concurrency probe 5/5.
+Stages: M1-A repo/DB/migrations/seed ✅ · M1-B auth/RBAC/admin ✅ · M1-C availability/reservations ✅ · M1-D payments/admin ✅ · M1-E frontend integration ✅ · M1-F tests/e2e/build ✅.
+Deviations (see DECISIONS D-021…D-029): Vite pinned to 6.4.6; M-Pesa unavailable until Daraja registered (503, desk settlement path live); no booking edit (cancel+rebook); no outbound email (503, never faked); eTIMS deferred; booking fixtures are dev seeds; Daraja webhook replay safe and admin-rooms RBAC enforced.
 
 ### M2 — GSAP & motion pass
 Tune existing animations of the accepted design (absent files/edge cases, reduced-motion coverage, performance). **Not a redesign.** Exit: motion consistent with DESIGN_SYSTEM §Animation; no jank on low-end hardware; owner eyeball approval.
@@ -46,7 +46,7 @@ Exit: release candidate; owner sign-off.
 
 ## Open risks (register)
 - R1 — Arena output quality/deviation: mitigated by the staging gate; rejection criteria pre-agreed (HANDOFF_CHECKLIST §1–5).
-- R2 — Tax/levy correctness: blocked on owner + accountant approval (TAX_AND_CHARGES.md §4).
+- R2 — Tax/levy correctness: provisional policy implemented (SC 10%, levy 2%, VAT 16% net). Owner/accountant sign-off still required before real launch (TAX_AND_CHARGES.md §4).
 - R3 — M-Pesa Daraja sandbox vs Go-Live credential lead time: register Daraja app early (M1/M2), not M5.
 - R4 — Stock imagery licensing: Pexels placeholders cannot ship publicly; commissioned shoot or licensed purchase before M7.
 - R5 — eTIMS: required for real Kenyan sales; not in any milestone yet — flag to owner before production launch.
