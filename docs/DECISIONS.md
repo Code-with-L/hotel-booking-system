@@ -105,3 +105,13 @@ OpenCode: backend engineering, integration, docs. Arena: visual frontend. AI nev
 - D-047 (2026-11-11) - M5: public reservation detail strips phone/country when authenticated only by possession of reference+email (staff/owner unchanged) - data minimization on public surfaces.
 - D-048 (2026-11-11) - M5: Arena token contrast fixes (stone #66675f, terracotta #8a563f, on-dark-muted 0.78) - design system hues preserved, only lightness adjusted to WCAG AA; axe 2.1 AA scan reports zero violations on 8 pages.
 - D-049 (2026-11-11) - M5: reconciliation and rehearsal are release-gated by docs/RELEASE_CHECKLIST.md; no automated production deployment exists or is claimed.
+
+## M6 decisions (2026-11-11)
+- D-050 (2026-11-11) - M6: staging topology is a single VPS/app host (Fly/Railway/Render/VPS-class) + managed PostgreSQL 16; no Kubernetes, no microservices; background sweepers stay in-process; rehearsal runs on an isolated local project (`stillhouse-staging`), never sharing dev/prod DBs.
+- D-051 (2026-11-11) - M6: staging TLS via baked-in nginx vhost (`apps/web/nginx.staging.conf`, build-arg NGINX_CONF in Dockerfile) instead of bind-mounting a single file into the container; self-signed cert only for local rehearsal, gitignored with certs/ and .env.staging.
+- D-052 (2026-11-11) - M6: `stillhouse-staging` is the isolated compose project namespace; cross-project orphan containers must not appear (dev DB recreation incident recorded and fixed).
+- D-053 (2026-11-11) - M6: CI/CD = GitHub Actions (verify job gates on API tests w/ PG16 service, build, e2e, image builds, Trivy CRITICAL/HIGH); staging deploy is workflow_dispatch and owner-gated by repo variable STAGING_DEPLOY_ENABLED + STAGING_* secrets; GHCR images produced on demand.
+- D-054 (2026-11-11) - M6: backup drill on populated staging verified restore incl. exclusion constraint room_allocation_no_overlap; restore drill evidence in m6-rehearsal/ (outside repo).
+- D-055 (2026-11-11) - M6: rollback semantics fixed in docs: app rollback = redeploy previous image tag (additive-only migrations); DB rollback = restore from backup; never conflate the two.
+- D-056 (2026-11-11) - M6: Windows dev host caveat - bind-mounted single files into nginx on Docker Desktop served stale content during rehearsal; all container configs baked at build time instead. Production images built on Linux runners in CI.
+- D-057 (2026-11-11) - M6: test harness (global-setup.mjs) derives test DB URL from TEST_DATABASE_URL/TEST_ADMIN_DATABASE_URL; no hardcoded localhost:5433 or dev passwords in the harness.

@@ -1,6 +1,6 @@
 # Build Plan - The Stillhouse
 
-**Status:** Approved direction at M0 (2026-11-11). Milestone gates are mandatory. M5 complete (2026-11-11) — owner-gated activation items remain; see `docs/reports/M5.md`.
+**Status:** Approved direction at M0 (2026-11-11). Milestone gates are mandatory. M6 complete (2026-11-11) — staging stack rehearsed locally; public deployment owner-gated; see `docs/reports/M6.md`.
 
 ## Working agreements
 - Small, reviewable commits; each commit compiles/passes tests for what it touches.
@@ -39,8 +39,11 @@ Full operational maturity for the people who run the hotel: live dashboard (need
 ### M5 - External integrations & release readiness ✓ (2026-11-11, this milestone)
 Daraja token cache + single-flight refresh + truthful 502/503 failure mapping; terminal-state callback idempotency with contradiction logging; new manager-only `GET /admin/reports/payment-health` (duplicate refs, amount mismatches, overpayments, cancelled-with-capture, stale pendings, invoice failures, attempt/payment total cross-check) and read-only eTIMS invoice history (`GET /admin/etims/invoices` + admin panel); transactional email extended (`paymentFailed`, `arrivalReminder` + afterFailed hooks); readiness probe bypass of session loading with 503 mapping (found by rehearsal); guest-detail PII minimization; WCAG AA contrast fixes (tokens only); self-hosted fonts, meta description, robots.txt, favicon. Tests: API 45/45, e2e 3/3, rehearsal 20/20, axe 0 violations, Lighthouse SEO 1.0. See `docs/reports/M5.md` and D-041..D-049.
 
-### M6+ (owner's call)
-Activation & verification milestone (owner-executed, engineering-assisted): Daraja sandbox → certified production cutover; eTIMS OSCU certification; SMTP go-live + deliverability (SPF/DKIM/DMARC); tax sign-off; booking-modification decision (D-027); first real release rehearsal on staging; owner sign-off against `docs/RELEASE_CHECKLIST.md`; photography commission; launch. Recommended M6 scope: see `docs/reports/M5.md` §15.
+### M6 - Staging deployment & operational commissioning ✓ (2026-11-11, this milestone)
+Isolated local staging stack (Docker project `stillhouse-staging`) with production-equivalent images, TLS via local CA, persistent PG16 volume, loopback-only exposure; GitHub Actions CI/CD (verify job enforces API tests on PG16 + build + e2e + image build + Trivy scan; staging deploy is manual + owner-gated); production boot-guard verified; `docs/STAGING.md`, `docs/RELEASE_CHECKLIST.md` staging section, `docs/reports/M6.md`; rehearsal evidence: acceptance 16/16 over real HTTPS, backup+restore drill with exclusion constraint verified, restart/DB-outage/boot-guard drills. **No public URL, domain, DNS, or provider verification yet — owner-gated (M7).** See `docs/reports/M6.md` and `docs/STAGING.md`.
+
+### M7+ (owner's call)
+**M7 — Public staging launch & owner verification:** host + managed PG16 + domain + TLS; Daraja sandbox live; SMTP live; eTIMS track (optional); monitoring sign-off; photography commission; final cutover decision. Recommended M7 scope: `docs/reports/M6.md` §15.
 
 ## Open risks (register)
 - R1 — Arena output quality/deviation: mitigated by the staging gate; rejection criteria pre-agreed (HANDOFF_CHECKLIST §1–5).

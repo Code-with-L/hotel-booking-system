@@ -3,6 +3,16 @@
 Use this checklist before any staging or production promotion. It is designed to be run top-to-bottom.
 Nothing here authorises an actual production deployment or spend against real infrastructure — that decision is the owner's.
 
+## D-staging (M6) — pre-launch rehearsal evidence (local)
+
+- [x] `tests/staging-acceptance.mjs` → 16/16 PASS against the local isolated stack over real HTTPS (self-signed CA).
+- [x] Backup drill: pg_dump → drop scratch → pg_restore → row counts match; `room_allocation_no_overlap` verified present.
+- [x] Restart drills: API and web restart; `/ready` recovered; container health probes green.
+- [x] Outage drill: `docker stop` db → `/ready` 503 → `docker start` → 200.
+- [x] Boot-guard: image refuses to start with missing `SESSION_SECRET`.
+- [ ] Public staging URL, DNS, TLS (owner-gated) — see `docs/STAGING.md` §5.
+- [ ] Provider verification (owner-gated) — see `docs/ACTIVATE_*.md`.
+
 ## A. Pre-flight (repository)
 
 - [ ] `git status` clean; working tree matches `origin/main` HEAD.

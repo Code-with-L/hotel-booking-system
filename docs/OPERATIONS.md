@@ -13,6 +13,13 @@ For front-desk, management and the owner. No code required for daily operation.
 4c. **Financials** - Operations -> **Financials** (manager+): collected / outstanding / refunds / cancellation fees / pending value, outstanding-balances table and recent payments. Figures come from recorded payments only; desk settlements count immediately.
 5. **Maintenance** - Rooms -> take room out of service with a note (creates a dated maintenance block; the room immediately disappears from sale). When fixed, set back to **Vacant clean** (future blocks are released automatically).
 
+## Staging & release
+
+- Staging is rehearsed locally via docker-compose.staging.yml (isolated project stillhouse-staging, self-signed TLS) - see docs/STAGING.md for bring-up, the owner commissioning checklist, and promotion to a public VPS + managed PostgreSQL.
+- Deploy order is always: migrations first, then the API, then verify /api/v1/ready returns {"ok":true,"db":"up"}, then smoke node tests/staging-acceptance.mjs (16/16 expected).
+- Rollback = redeploy previous image tag (migrations are additive-only; app rollback never reverses a migration). Database rollback = restore from backup; drill evidence in docs/reports/M6.md section 8.
+- Production boot refuses unsafe config (missing/short SESSION_SECRET, COOKIE_SECURE!=true, non-HTTPS WEB_ORIGIN) with an explicit error - fix the environment, not the guard.
+
 ## Payment reconciliation (daily, 5 minutes)
 
 - Operations -> Financials (manager+): collected/outstanding/refunds/cancellation fees/pending value, outstanding balances, and the Payment health panel - duplicate references, amount mismatches, overpaid reservations, cancelled-with-capture, stale pending M-Pesa transactions, and invoice failures. Findings are informational; correct records only through the existing flows (desk settlement, requery, refunds) - never by editing the ledger.
