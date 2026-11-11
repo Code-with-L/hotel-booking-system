@@ -1,5 +1,6 @@
 # The Stillhouse — web (static SPA) production image: nginx serves the built site and proxies /api.
 FROM node:22-alpine AS build
+RUN npm install -g npm@11
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/package.json

@@ -1,6 +1,7 @@
 # The Stillhouse — API production image
 # Multi-stage: install production deps only, then run as non-root.
 FROM node:22-alpine AS deps
+RUN npm install -g npm@11
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps apps
@@ -9,6 +10,10 @@ COPY prisma prisma
 RUN npm ci --omit=dev -w @stillhouse/api -w @stillhouse/shared --include-workspace-root=false
 
 FROM node:22-alpine AS runtime
+# Drop the bundled npm/corepack/npx from the production image — the app runs via `node` directly.
+# Eliminates the npm-internal CVE class and reduces image surface.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 ENV NODE_ENV=production \
     PORT=4000
 WORKDIR /app
