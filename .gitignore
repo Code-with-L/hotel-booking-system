@@ -15,3 +15,8 @@ Thumbs.db
 playwright-report/
 test-results/
 arena-staging/
+
+# Local staging TLS material (private keys never committed)
+deploy/certs/
+
+!.env.staging.example

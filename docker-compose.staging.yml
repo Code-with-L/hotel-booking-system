@@ -1,0 +1,149 @@
+# The Stillhouse — STAGING stack (local/isolated docker host or a Linux staging box).
+# NOT for production. No real secrets in this file. .env.staging is gitignored and
+# injected by the operator/CI secret store; .env.staging.example documents the names.
+#
+# Bring-up (order matters):
+#   docker compose -f docker-compose.staging.yml up -d db
+#   docker compose -f docker-compose.staging.yml run --rm migrate
+#   docker compose -f docker-compose.staging.yml --profile rehearsal run --rm seed   # fixtures only
+#   docker compose -f docker-compose.staging.yml up -d api web
+#   docker compose -f docker-compose.staging.yml ps
+#
+# Staging MUST NOT share a database with development or production. The staging
+# database is a separate container with its own persistent volume.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: stillhouse-staging-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: stillhouse_staging
+      POSTGRES_PASSWORD: ${STAGING_DB_PASSWORD:?set STAGING_DB_PASSWORD in .env.staging}
+      POSTGRES_DB: stillhouse_staging
+    volumes:
+      - stillhouse_staging_data:/var/lib/postgresql/data   # persistent; never tmpfs
+    networks:
+      - staging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stillhouse_staging -d stillhouse_staging"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    # Loopback-only access from the host for backup/restore drills; not exposed on the LAN.
+    ports:
+      - "127.0.0.1:5434:5432"
+
+  migrate:
+    image: hotel-booking-system-api:staging
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: npx prisma migrate deploy
+    environment:
+      DATABASE_URL: postgresql://stillhouse_staging:${STAGING_DB_PASSWORD}@db:5432/stillhouse_staging?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - staging
+    restart: "no"
+
+  # Dev-fixture profile ONLY: seeds 34 fake reservations + staff users with known dev passwords.
+  # Never for production. Chosen so staging rehearsals exercise the real booking lifecycle.
+  seed:
+    image: hotel-booking-system-api:staging
+    command: node prisma/seed.js
+    environment:
+      DATABASE_URL: postgresql://stillhouse_staging:${STAGING_DB_PASSWORD}@db:5432/stillhouse_staging?schema=public
+      SEED_ADMIN_EMAIL: admin@thestillhouse.staging
+      SEED_ADMIN_PASSWORD: ${STAGING_SEED_ADMIN_PASSWORD:?set in .env.staging}
+      SEED_MANAGER_EMAIL: manager@thestillhouse.staging
+      SEED_MANAGER_PASSWORD: ${STAGING_SEED_MANAGER_PASSWORD:?set in .env.staging}
+      SEED_GUEST_EMAIL: guest@stillhouse.staging
+      SEED_GUEST_PASSWORD: ${STAGING_SEED_GUEST_PASSWORD:?set in .env.staging}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - staging
+    restart: "no"
+    profiles: ["rehearsal"]
+
+  api:
+    image: hotel-booking-system-api:staging
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://stillhouse_staging:${STAGING_DB_PASSWORD}@db:5432/stillhouse_staging?schema=public
+      SESSION_SECRET: ${STAGING_SESSION_SECRET:?set STAGING_SESSION_SECRET in .env.staging}
+      COOKIE_SECURE: "true"
+      WEB_ORIGIN: ${STAGING_WEB_ORIGIN:-https://staging.stillhouse.local}
+      FRONTEND_BASE_URL: ${STAGING_WEB_ORIGIN:-https://staging.stillhouse.local}
+      TRUST_PROXY: "1"
+      LOG_LEVEL: info
+      # Integrations deliberately unconfigured: 503/skipped, never fake. Owner flips these when verified.
+      MPESA_ENV: ${MPESA_ENV:-disabled}
+      MPESA_CONSUMER_KEY: ${MPESA_CONSUMER_KEY:-}
+      MPESA_CONSUMER_SECRET: ${MPESA_CONSUMER_SECRET:-}
+      MPESA_SHORTCODE: ${MPESA_SHORTCODE:-}
+      MPESA_PASSKEY: ${MPESA_PASSKEY:-}
+      MPESA_CALLBACK_URL: ${MPESA_CALLBACK_URL:-}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-}
+      EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST:-}
+      EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT:-587}
+      EMAIL_SMTP_USER: ${EMAIL_SMTP_USER:-}
+      EMAIL_SMTP_PASS: ${EMAIL_SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-The Stillhouse <reservations@staging.stillhouse.local>}
+      ADMIN_NOTIFICATION_EMAIL: ${ADMIN_NOTIFICATION_EMAIL:-}
+      ETIMS_ENVIRONMENT: ${ETIMS_ENVIRONMENT:-disabled}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - staging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4000/api/v1/ready >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  web:
+    image: hotel-booking-system-web:staging
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Staging TLS vhost is baked into the build (no host-file bind mounts into nginx)
+        NGINX_CONF: nginx.staging.conf
+    restart: unless-stopped
+    volumes:
+      # Staging TLS material (self-signed, local only). Certs are static; bind mounts are fine for read-only secrets.
+      - ./deploy/certs:/etc/nginx/certs:ro
+    networks:
+      - staging
+    ports:
+      # Loopback only: 8080 = HTTP (redirects to HTTPS), 8443 = HTTPS
+      - "127.0.0.1:8080:80"
+      - "127.0.0.1:8443:443"
+    depends_on:
+      api:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/healthz >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  stillhouse_staging_data:
+
+networks:
+  staging:
+    driver: bridge
