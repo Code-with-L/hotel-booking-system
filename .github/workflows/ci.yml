@@ -80,8 +80,8 @@ jobs:
       - name: Production build (web + api)
         run: npm run build
 
-      - name: Playwright — install browser
-        run: npx playwright install --with-deps chromium
+      - name: Playwright — install browser (no system deps; ubuntu-latest ships them)
+        run: npx playwright install chromium
 
       - name: E2E database — create and migrate stillhouse_e2e
         env:
