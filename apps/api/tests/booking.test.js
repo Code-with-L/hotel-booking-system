@@ -105,6 +105,13 @@ describe('reservation lifecycle', () => {
     const refs = [...account.body.upcoming, ...account.body.previous].map((r) => r.reference);
     expect(refs).toContain(first.body.reference);
 
+    // Replay did not re-send the confirmation email (dedupe on booking-confirmation:<reference>)
+    const mailbox = new pg.Client({ connectionString: TEST_DATABASE_URL });
+    await mailbox.connect();
+    const dedupe = await mailbox.query('SELECT COUNT(*)::int AS c FROM email_outbox WHERE "dedupeKey" = $1', [`booking-confirmation:${first.body.reference}`]);
+    await mailbox.end();
+    expect(dedupe.rows[0].c).toBe(1);
+
     const mine = await agent.get(`/api/v1/reservations/${first.body.reference}`);
     expect(mine.status).toBe(200);
     expect(mine.body.pricing.totalMinor).toBe(first.body.pricing.totalMinor);
@@ -220,6 +227,23 @@ describe('payment flow (Daraja unavailable → desk settlement)', () => {
     });
     expect(paid.status).toBe(201);
     expect(paid.body.reservationStatus).toBe('confirmed');
+
+    // eTIMS pipeline ran with the test mock provider: invoice issued, recorded, idempotent
+    const etimsCheck = new pg.Client({ connectionString: TEST_DATABASE_URL });
+    await etimsCheck.connect();
+    const etims = await etimsCheck.query('SELECT status, "receiptNumber", "etimsInvoiceNumber" FROM tax_invoice WHERE "reservationId" = (SELECT id FROM reservation WHERE reference = $1)', [ref]);
+    await etimsCheck.end();
+    expect(etims.rows).toHaveLength(1);
+    expect(etims.rows[0].status).toBe('issued');
+    expect(etims.rows[0].etimsInvoiceNumber).toMatch(/^MOCK-/);
+
+    // Email outbox recorded the confirmation once (dedupe prevents re-send on replay)
+    const mailbox = new pg.Client({ connectionString: TEST_DATABASE_URL });
+    await mailbox.connect();
+    const outbox = await mailbox.query('SELECT status, "dedupeKey" FROM email_outbox WHERE "dedupeKey" = $1', [`payment-received:${ref}`]);
+    await mailbox.end();
+    expect(outbox.rows).toHaveLength(1);
+    expect(outbox.rows[0].status).toBe('sent');
   });
 
   it('Daraja-shaped callback confirms the reservation and replays safely', async () => {

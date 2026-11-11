@@ -6,6 +6,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { env } from './config/env.js';
 import { loadSession, apiLimiter, errorHandler, notFoundHandler } from './middleware/index.js';
+import { requestLogger } from './middleware/requestLogger.js';
 import { authRouter } from './modules/auth/routes.js';
 import { roomsRouter, availabilityRouter, quotesRouter } from './modules/rooms/routes.js';
 import { reservationsRouter, accountRouter } from './modules/reservations/routes.js';
@@ -25,10 +26,25 @@ export const createApp = () => {
   app.use(cors({ origin: env.webOrigin, credentials: true }));
   app.use(express.json({ limit: '256kb' }));
   app.use(cookieParser());
-  app.use(apiLimiter);
+  // Webhooks (provider retries) and liveness probes must not be rate-limited
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api/v1/webhooks') || req.path === '/api/v1/health' || req.path === '/api/v1/ready') return next();
+    return apiLimiter(req, res, next);
+  });
+  app.use(requestLogger);
   app.use(loadSession);
 
   app.get('/api/v1/health', (_req, res) => res.json({ ok: true, service: 'stillhouse-api', time: new Date().toISOString() }));
+  // Readiness: verifies the database answers before we report ready (used by orchestrators).
+  app.get('/api/v1/ready', async (_req, res) => {
+    try {
+      const { prisma } = await import('./lib/prisma.js');
+      await prisma.$queryRaw`SELECT 1`;
+      res.json({ ok: true, service: 'stillhouse-api', db: 'up', time: new Date().toISOString() });
+    } catch (err) {
+      res.status(503).json({ ok: false, service: 'stillhouse-api', db: 'down' });
+    }
+  });
 
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1', roomsRouter);

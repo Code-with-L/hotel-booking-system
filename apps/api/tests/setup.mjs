@@ -9,3 +9,6 @@ process.env.MPESA_ENV = 'disabled';
 process.env.COOKIE_SECURE = 'false';
 process.env.RATE_LIMIT_MAX = '10000';
 process.env.AUTH_RATE_LIMIT_MAX = '10000';
+// Exercise the eTIMS boundary with the explicit mock provider (deterministic, never talks to KRA)
+process.env.ETIMS_ENVIRONMENT = 'mock';
+process.env.EMAIL_PROVIDER = 'json';

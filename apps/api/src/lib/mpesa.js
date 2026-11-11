@@ -68,3 +68,30 @@ export async function stkPush({ phone, amountMajor, accountReference, transactio
   }
   return { checkoutRequestId: json.CheckoutRequestID, merchantRequestId: json.MerchantRequestID || null, responseDescription: json.ResponseDescription || '' };
 }
+
+/** STK Query — official Safaricom endpoint: POST /mpesa/stkpushquery/v1/query
+ *  ResultCode semantics: 0 = success, 1032 = cancelled by user, 1037 = unreachable/timeout,
+ *  1 = insufficient funds, 9999/timeout-class codes = still processing (treat as pending). */
+export async function stkQuery(checkoutRequestId) {
+  if (!mpesaConfigured()) throw notConfigured();
+  const token = await getAccessToken();
+  const timestamp = new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
+  const password = Buffer.from(`${env.mpesaShortcode}${env.mpesaPasskey}${timestamp}`).toString('base64');
+  const body = {
+    BusinessShortCode: env.mpesaShortcode,
+    Password: password,
+    Timestamp: timestamp,
+    CheckoutRequestID: checkoutRequestId,
+  };
+  const { status, json, raw } = await fetchJson(`${baseUrl()}/mpesa/stkpushquery/v1/query`, { method: 'POST', auth: `Bearer ${token}`, body });
+  if (status !== 200) {
+    throw new ApiError(502, 'MPESA_UPSTREAM_ERROR', `STK query failed (HTTP ${status}). ${String(raw).slice(0, 200)}`);
+  }
+  // Daraja returns both ResponseCode (query accepted) and ResultCode (transaction outcome)
+  return {
+    responseCode: json?.ResponseCode ?? null,
+    resultCode: json?.ResultCode != null ? Number(json.ResultCode) : null,
+    resultDesc: json?.ResultDesc || null,
+    raw: json,
+  };
+}

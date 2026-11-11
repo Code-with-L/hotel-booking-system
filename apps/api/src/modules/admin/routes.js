@@ -396,6 +396,47 @@ adminRouter.put('/admin/settings', requireRole('manager', 'admin'), validate(set
   } catch (err) { next(err); }
 });
 
+// ---------- Payments reconciliation (for daily settlement) ----------
+adminRouter.get('/admin/reports/reconciliation', requireRole('manager', 'admin'), async (req, res, next) => {
+  try {
+    const to = req.query.to ? new Date(`${req.query.to}T23:59:59.999Z`) : new Date();
+    const from = req.query.from ? new Date(`${req.query.from}T00:00:00.000Z`) : new Date(to.getTime() - 30 * 86400000);
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from > to) {
+      throw badRequest('Invalid from/to date range.');
+    }
+    const payments = await prisma.payment.findMany({
+      where: { createdAt: { gte: from, lte: to } },
+      include: { reservation: { select: { reference: true, checkIn: true, guest: { select: { firstName: true, lastName: true, email: true } } } } },
+      orderBy: { createdAt: 'desc' },
+      take: 500,
+    });
+    const totals = payments.reduce((acc, p) => {
+      acc.count += 1;
+      if (p.status === 'succeeded') acc.succeededMinor += p.amountMinor;
+      else if (p.status === 'failed') acc.failed += 1;
+      else if (p.status === 'pending') acc.pending += 1;
+      else if (p.status === 'refunded' || p.status === 'partially_refunded') acc.refunded += 1;
+      return acc;
+    }, { count: 0, succeededMinor: 0, failed: 0, pending: 0, refunded: 0 });
+    res.json({
+      from: from.toISOString().slice(0, 10),
+      to: to.toISOString().slice(0, 10),
+      totals,
+      payments: payments.map((p) => ({
+        id: p.id,
+        date: p.createdAt.toISOString(),
+        reference: p.reservation?.reference,
+        guest: p.reservation?.guest ? `${p.reservation.guest.firstName} ${p.reservation.guest.lastName}` : undefined,
+        provider: p.provider,
+        providerReference: p.providerReference,
+        amountMinor: p.amountMinor,
+        status: p.status,
+        capturedAt: p.capturedAt,
+      })),
+    });
+  } catch (err) { next(err); }
+});
+
 // ---------- Audit log ----------
 adminRouter.get('/admin/audit-log', requireRole('admin'), async (req, res, next) => {
   try {

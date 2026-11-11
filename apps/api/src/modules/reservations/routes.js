@@ -9,6 +9,7 @@ import { releaseAllocations } from '../../lib/allocations.js';
 import { audit } from '../../lib/audit.js';
 import { accountPayload } from '../../lib/account.js';
 import { updateProfileSchema } from '@stillhouse/shared';
+import { afterCreated, afterCancelled } from '../../lib/postBookingEvents.js';
 
 export const reservationsRouter = Router();
 export const accountRouter = Router();
@@ -68,6 +69,7 @@ reservationsRouter.post('/reservations', validate(createReservationSchema), asyn
       actorUserId: req.auth?.user?.id ?? null,
       ip: req.ip,
     });
+    await afterCreated(result);
     res.status(201).json(reservationPayload(result));
   } catch (err) { next(err); }
 });
@@ -129,6 +131,7 @@ reservationsRouter.post('/reservations/:reference/cancel', validate(cancelReserv
       await audit(tx, { actorUserId: req.auth?.user?.id ?? null, action: 'reservation.cancelled', entity: 'reservation', entityId: r.id, after: { reference: r.reference, cancelFeeMinor: fee, reason: req.validatedBody.reason || null }, ip: req.ip });
       return r;
     });
+    await afterCancelled({ reservationId: updated.id, cancelFeeMinor: fee });
 
     res.json({
       reference: updated.reference,

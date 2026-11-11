@@ -36,8 +36,24 @@ export const env = {
   mpesaCallbackUrl: process.env.MPESA_CALLBACK_URL || '',
   mpesaWebhookAllowedIps: (process.env.MPESA_WEBHOOK_ALLOWED_IPS || '').split(',').map((s) => s.trim()).filter(Boolean),
   emailProvider: process.env.EMAIL_PROVIDER || '',
-  emailApiKey: process.env.EMAIL_API_KEY || '',
-  emailFrom: process.env.EMAIL_FROM || '',
+  emailSmtpHost: process.env.EMAIL_SMTP_HOST || '',
+  emailSmtpPort: num('EMAIL_SMTP_PORT', 587),
+  emailSmtpSecure: bool('EMAIL_SMTP_SECURE', false),
+  emailSmtpUser: process.env.EMAIL_SMTP_USER || '',
+  emailSmtpPass: process.env.EMAIL_SMTP_PASS || '',
+  emailFrom: process.env.EMAIL_FROM || 'The Stillhouse <reservations@stillhouse.example>',
+  adminNotificationEmail: process.env.ADMIN_NOTIFICATION_EMAIL || '',
+  frontendBaseUrl: process.env.FRONTEND_BASE_URL || 'http://localhost:5173',
+
+  // eTIMS (KRA) — system-to-system OSCU route. Disabled until the owner registers, sandboxes and certifies.
+  etimsEnabled: bool('ETIMS_ENABLED', false),
+  etimsEnvironment: process.env.ETIMS_ENVIRONMENT || 'disabled', // disabled | sandbox | production
+  etimsTin: process.env.ETIMS_TIN || '',
+  etimsBranchId: process.env.ETIMS_BRANCH_ID || '00',
+  etimsDeviceSerial: process.env.ETIMS_DEVICE_SERIAL || '',
+  etimsBaseUrl: process.env.ETIMS_BASE_URL || '', // e.g. https://etims-api-sbx.kra.go.ke (sandbox) — set explicitly; never defaulted to production
+  etimsCommunicationKey: process.env.ETIMS_COMMUNICATION_KEY || '', // issued by KRA after device activation
+  etimsInvoiceSeriesPrefix: process.env.ETIMS_INVOICE_SERIES_PREFIX || 'STL',
   rateLimitWindowMs: num('RATE_LIMIT_WINDOW_MS', 15 * 60 * 1000),
   rateLimitMax: num('RATE_LIMIT_MAX', 300),
   authRateLimitMax: num('AUTH_RATE_LIMIT_MAX', 10),

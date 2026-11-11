@@ -3,12 +3,15 @@ import { Router } from 'express';
 import { prisma } from '../../lib/prisma.js';
 import { initiatePaymentSchema, recordDeskPaymentSchema } from '@stillhouse/shared';
 import { validate, requireRole, isStaff } from '../../middleware/index.js';
-import { badRequest, notFound, forbidden, ApiError } from '../../lib/errors.js';
+import { badRequest, notFound, forbidden, conflict, ApiError } from '../../lib/errors.js';
 import { mpesaConfigured, stkPush } from '../../lib/mpesa.js';
 import { confirmReservationTx } from '../../lib/confirm.js';
 import { releaseAllocations } from '../../lib/allocations.js';
 import { audit } from '../../lib/audit.js';
 import { env } from '../../config/env.js';
+import { logger, maskRef } from '../../lib/logger.js';
+import { afterConfirmed } from '../../lib/postBookingEvents.js';
+import { stkQuery } from '../../lib/mpesa.js';
 
 export const paymentsRouter = Router();
 export const webhooksRouter = Router();
@@ -104,6 +107,7 @@ webhooksRouter.post('/webhooks/mpesa', async (req, res) => {
 
     if (payment.status === 'succeeded') return reply(0, 'Accepted (already processed)'); // idempotent replay
 
+    let confirmed = false;
     await prisma.$transaction(async (tx) => {
       await tx.paymentAttempt.create({
         data: {
@@ -125,17 +129,20 @@ webhooksRouter.post('/webhooks/mpesa', async (req, res) => {
         // is preserved in payment_attempt.raw_payload and never needed for idempotency.
         await tx.payment.update({ where: { id: payment.id }, data: { status: 'succeeded', capturedAt: new Date() } });
         await confirmReservationTx(tx, { reservation: payment.reservation, ip: req.ip, note: 'mpesa webhook' });
+        confirmed = true;
       } else {
         const reason = resultCode === 0 ? 'Amount mismatch' : (cb.ResultDesc || 'Payment failed or cancelled');
         await tx.payment.update({ where: { id: payment.id }, data: { status: 'failed', failureReason: reason } });
         await releaseAllocations(tx, { sourceType: 'reservation', sourceId: payment.reservationId, state: 'released' });
         await audit(tx, { action: 'payment.failed', entity: 'payment', entityId: payment.id, after: { reason }, ip: req.ip });
+        logger.warn({ reference: maskRef(payment.reservation?.reference), reason }, 'mpesa callback settled as failed');
       }
     });
+    if (confirmed) await afterConfirmed(payment.reservationId);
 
     return reply(0, 'Accepted');
   } catch (err) {
-    console.error('[mpesa-webhook]', err);
+    logger.error({ err: String(err?.message || err) }, 'mpesa callback error');
     return reply(1, 'Internal error');
   }
 });
@@ -167,8 +174,61 @@ adminPaymentsRouter.post('/admin/payments/manual', requireRole('receptionist', '
       await audit(tx, { actorUserId: req.auth.user.id, action: 'payment.desk_recorded', entity: 'payment', entityId: payment.id, after: { method, amountMinor, note }, ip: req.ip });
       return { payment, confirmed };
     });
+    if (reservation.status === 'pending') await afterConfirmed(reservation.id);
 
     res.status(201).json({ paymentId: result.payment.id, status: 'succeeded', reservationStatus: result.confirmed.status === 'pending' ? 'confirmed' : result.confirmed.status, message: 'Payment recorded and reservation confirmed.' });
+  } catch (err) { next(err); }
+});
+
+adminPaymentsRouter.post('/admin/payments/:id/requery', requireRole('manager', 'admin'), async (req, res, next) => {
+  try {
+    const paymentId = Number(req.params.id);
+    if (!Number.isInteger(paymentId)) throw badRequest('Invalid payment id.');
+    const payment = await prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: { reservation: true },
+    });
+    if (!payment) throw notFound('Payment not found.');
+    if (payment.provider !== 'mpesa') throw badRequest('STK requery only applies to M-Pesa payments.');
+    if (payment.status !== 'pending') {
+      throw conflict(`This payment is ${payment.status}; requery is only meaningful while pending.`);
+    }
+    if (!mpesaConfigured()) {
+      throw new ApiError(503, 'MPESA_NOT_CONFIGURED', 'M-Pesa is not configured. No query can be sent to Daraja.');
+    }
+
+    const query = await stkQuery(payment.providerReference);
+    const checkoutRequestId = payment.providerReference;
+
+    // ResultCode semantics (Daraja): 0 = paid; 9999 / null-timeout class = still processing; anything else = failure.
+    if (query.resultCode === 0) {
+      await prisma.$transaction(async (tx) => {
+        await tx.paymentAttempt.create({
+          data: { reservationId: payment.reservationId, paymentId: payment.id, provider: 'mpesa', providerReference: checkoutRequestId, amountMinor: payment.amountMinor, currency: payment.currency, status: 'succeeded', rawPayload: query.raw, verified: true, ip: req.ip },
+        });
+        await tx.payment.update({ where: { id: payment.id }, data: { status: 'succeeded', capturedAt: new Date() } });
+        await confirmReservationTx(tx, { reservation: payment.reservation, actorUserId: req.auth.user.id, ip: req.ip, note: 'stk requery' });
+      });
+      await afterConfirmed(payment.reservationId);
+      return res.json({ outcome: 'confirmed' });
+    }
+
+    if (query.resultCode === null || query.resultCode === 9999) {
+      await prisma.paymentAttempt.create({
+        data: { reservationId: payment.reservationId, paymentId: payment.id, provider: 'mpesa', providerReference: checkoutRequestId, amountMinor: payment.amountMinor, currency: payment.currency, status: 'pending', rawPayload: query.raw, verified: false, ip: req.ip },
+      });
+      return res.json({ outcome: 'still_pending', resultDesc: query.resultDesc });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.paymentAttempt.create({
+        data: { reservationId: payment.reservationId, paymentId: payment.id, provider: 'mpesa', providerReference: checkoutRequestId, amountMinor: payment.amountMinor, currency: payment.currency, status: 'failed', rawPayload: query.raw, verified: true, ip: req.ip },
+      });
+      await tx.payment.update({ where: { id: payment.id }, data: { status: 'failed', failureReason: query.resultDesc || `STK query returned ${query.resultCode}` } });
+      await releaseAllocations(tx, { sourceType: 'reservation', sourceId: payment.reservationId, state: 'released' });
+      await audit(tx, { actorUserId: req.auth.user.id, action: 'payment.requery_failed', entity: 'payment', entityId: payment.id, after: { resultCode: query.resultCode, resultDesc: query.resultDesc }, ip: req.ip });
+    });
+    return res.json({ outcome: 'failed', resultDesc: query.resultDesc });
   } catch (err) { next(err); }
 });
 

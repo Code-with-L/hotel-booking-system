@@ -7,9 +7,11 @@ import { env } from '../../config/env.js';
 import { hashToken, requireAuth, authLimiter, SESSION_COOKIE } from '../../middleware/index.js';
 import { validate } from '../../middleware/index.js';
 import { signInSchema, registerSchema } from '@stillhouse/shared';
-import { ApiError, badRequest, unauthorized } from '../../lib/errors.js';
+import { badRequest, unauthorized, ApiError } from '../../lib/errors.js';
 import { audit } from '../../lib/audit.js';
 import { accountPayload } from '../../lib/account.js';
+import { sendPasswordReset } from '../../integrations/email/index.js';
+import { emailConfigured } from '../../integrations/email/transport.js';
 
 export const authRouter = Router();
 
@@ -100,19 +102,18 @@ authRouter.get('/me', requireAuth, (req, res) => {
 // Password reset: only available when an email provider is configured. Otherwise 503 - never fake an email being sent.
 authRouter.post('/forgot-password', authLimiter, async (req, res, next) => {
   try {
-    if (!env.emailProvider) {
+    if (!emailConfigured()) {
       throw new ApiError(503, 'EMAIL_PROVIDER_NOT_CONFIGURED', 'Password reset by email is not configured yet. Please contact the front desk.');
     }
     const email = String(req.body?.email || '').trim().toLowerCase();
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email }, include: { guest: true } });
     // Always return the same response to avoid account enumeration
     if (user) {
       const raw = crypto.randomBytes(32).toString('base64url');
       await prisma.passwordResetToken.create({
         data: { userId: user.id, tokenHash: hashToken(raw), expiresAt: new Date(Date.now() + 60 * 60 * 1000) },
       });
-      const { sendPasswordReset } = await import('../notifications/email.js');
-      await sendPasswordReset({ to: user.email, token: raw });
+      await sendPasswordReset({ user, guest: user.guest, token: raw });
     }
     res.json({ ok: true, message: 'If that email is registered, a reset link has been sent.' });
   } catch (err) { next(err); }

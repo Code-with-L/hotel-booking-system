@@ -285,6 +285,7 @@ model Reservation {
   roomsAssigned ReservationRoom[]
   payments      Payment[]
   paymentAttempts PaymentAttempt[]
+  taxInvoices   TaxInvoice[]
 
   @@index([status, checkIn])
   @@index([guestId])
@@ -419,6 +420,52 @@ model NewsletterSubscriber {
   createdAt DateTime @default(now())
 
   @@map("newsletter_subscriber")
+}
+
+model EmailOutbox {
+  id             Int      @id @default(autoincrement())
+  dedupeKey      String   @unique // template + entity + purpose; prevents duplicate sends
+  to             String
+  template       String
+  subject        String
+  status         String   @default("pending") // pending | sent | failed | skipped
+  relatedType    String?
+  relatedId      String?
+  providerMessageId String?
+  error          String?
+  attempts       Int      @default(0)
+  createdAt      DateTime @default(now())
+  sentAt         DateTime?
+
+  @@index([status, createdAt])
+  @@map("email_outbox")
+}
+
+model TaxInvoice {
+  id             Int      @id @default(autoincrement())
+  reservationId  Int @unique
+  reservation    Reservation @relation(fields: [reservationId], references: [id])
+  status         String   @default("skipped") // skipped | pending | issued | failed
+  receiptType    String   @default("S") // S=sale
+  receiptNumber  Int?     // assigned by TIS when issued; uninterrupted ascending series
+  customerPin    String?
+  customerName   String?
+  totalMinor     Int
+  taxMinor       Int
+  currency       String   @default("KES")
+  etimsInvoiceNumber String?
+  etimsReceiptSignature String?
+  etimsInternalData   String?
+  etimsResponseRaw    Json?
+  attempts       Int      @default(0)
+  lastError      String?
+  createdAt      DateTime @default(now())
+  issuedAt       DateTime?
+
+  @@unique([receiptType, receiptNumber])
+  @@index([reservationId])
+  @@index([status])
+  @@map("tax_invoice")
 }
 
 model Setting {
