@@ -18,6 +18,25 @@ const bool = (name, fallback = false) => {
   return v == null ? fallback : ['1', 'true', 'yes'].includes(v.toLowerCase());
 };
 
+// Production guardrails: refuse to boot with unsafe configuration.
+const productionCheck = () => {
+  if ((process.env.NODE_ENV || 'development') !== 'production') return;
+  const problems = [];
+  if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.includes('dev-only') || process.env.SESSION_SECRET.length < 32) {
+    problems.push('SESSION_SECRET must be set to a long random string in production.');
+  }
+  if (String(process.env.COOKIE_SECURE).toLowerCase() !== 'true') {
+    problems.push('COOKIE_SECURE must be true in production (requires HTTPS).');
+  }
+  if (!/^https:\/\//.test(process.env.WEB_ORIGIN || '')) {
+    problems.push('WEB_ORIGIN must be an https:// origin in production.');
+  }
+  if (problems.length) {
+    throw new Error(`Unsafe production configuration:\n - ${problems.join('\n - ')}\nSee .env.example / docs/DEPLOYMENT.md.`);
+  }
+};
+productionCheck();
+
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   isProduction: (process.env.NODE_ENV || 'development') === 'production',

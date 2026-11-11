@@ -76,11 +76,9 @@ async function main() {
         { season: 'Peak season', validFrom: peakFrom, validTo: peakTo, nightlyMinor: hundred(Math.round(base * 1.25)), status: rp.key === 'advance' ? 'scheduled' : 'active' },
       ];
       for (const card of cards) {
-        await prisma.rateCard.upsert({
-          where: { roomTypeId_ratePlanId_season_validFrom: { roomTypeId: type.id, ratePlanId: plan.id, season: card.season, validFrom: card.validFrom } },
-          create: { roomTypeId: type.id, ratePlanId: plan.id, ...card, validFrom: card.validFrom, validTo: card.validTo },
-          update: { nightlyMinor: card.nightlyMinor, status: card.status, validTo: card.validTo },
-        });
+        // Idempotent fixtures: replace the season card wholesale instead of time-window drift
+        await prisma.rateCard.deleteMany({ where: { roomTypeId: type.id, ratePlanId: plan.id, season: card.season } });
+        await prisma.rateCard.create({ data: { roomTypeId: type.id, ratePlanId: plan.id, ...card } });
       }
     }
   }
@@ -92,20 +90,28 @@ async function main() {
 
   // Staff + demo guest users
   const hash = (pw) => bcrypt.hashSync(pw, 12);
-  const admin = await prisma.user.upsert({ where: { email: (process.env.SEED_ADMIN_EMAIL || 'admin@thestillhouse.example').toLowerCase() }, create: { email: (process.env.SEED_ADMIN_EMAIL || 'admin@thestillhouse.example').toLowerCase(), passwordHash: hash(process.env.SEED_ADMIN_PASSWORD || 'StillhouseAdmin!26'), name: 'Hotel Administrator' }, update: {} });
-  const manager = await prisma.user.upsert({ where: { email: (process.env.SEED_MANAGER_EMAIL || 'manager@thestillhouse.example').toLowerCase() }, create: { email: (process.env.SEED_MANAGER_EMAIL || 'manager@thestillhouse.example').toLowerCase(), passwordHash: hash(process.env.SEED_MANAGER_PASSWORD || 'StillhouseManager!26'), name: 'Hotel Manager' }, update: {} });
+  // In production, never create default-credential users: require explicit passwords via env.
+  const isProd = (process.env.NODE_ENV || 'development') === 'production';
+  const requireSeedPassword = (name, fallback) => {
+    const fromEnv = process.env[name];
+    if (isProd && !fromEnv) return null; // skip user creation entirely; catalogue seeds only
+    return fromEnv || fallback;
+  };
+  const adminPassword = requireSeedPassword('SEED_ADMIN_PASSWORD', 'StillhouseAdmin!26');
+  const managerPassword = requireSeedPassword('SEED_MANAGER_PASSWORD', 'StillhouseManager!26');
+  const guestPassword = requireSeedPassword('SEED_GUEST_PASSWORD', 'GuestPassword!26');
+
+  const admin = adminPassword && await prisma.user.upsert({ where: { email: (process.env.SEED_ADMIN_EMAIL || 'admin@thestillhouse.example').toLowerCase() }, create: { email: (process.env.SEED_ADMIN_EMAIL || 'admin@thestillhouse.example').toLowerCase(), passwordHash: hash(adminPassword), name: 'Hotel Administrator' }, update: {} });
+  const manager = managerPassword && await prisma.user.upsert({ where: { email: (process.env.SEED_MANAGER_EMAIL || 'manager@thestillhouse.example').toLowerCase() }, create: { email: (process.env.SEED_MANAGER_EMAIL || 'manager@thestillhouse.example').toLowerCase(), passwordHash: hash(managerPassword), name: 'Hotel Manager' }, update: {} });
   const guest = await prisma.guest.upsert({ where: { email: (process.env.SEED_GUEST_EMAIL || 'naomi.achieng@example.com').toLowerCase() }, create: { firstName: 'Naomi', lastName: 'Achieng', email: (process.env.SEED_GUEST_EMAIL || 'naomi.achieng@example.com').toLowerCase(), phone: '+254 712 000 042', country: 'Kenya', notes: 'Prefers a quiet room away from the restaurant.', marketingConsent: true }, update: {} });
-  const guestUser = await prisma.user.upsert({ where: { email: guest.email }, create: { guestId: guest.id, email: guest.email, passwordHash: hash(process.env.SEED_GUEST_PASSWORD || 'GuestPassword!26'), name: `${guest.firstName} ${guest.lastName}` }, update: {} });
+  const guestUser = guestPassword && await prisma.user.upsert({ where: { email: guest.email }, create: { guestId: guest.id, email: guest.email, passwordHash: hash(guestPassword), name: `${guest.firstName} ${guest.lastName}` }, update: {} });
 
   const roles = await prisma.role.findMany();
   const roleByKey = Object.fromEntries(roles.map((r) => [r.key, r.id]));
   const link = async (userId, roleKey) => prisma.userRole.upsert({ where: { userId_roleId: { userId, roleId: roleByKey[roleKey] } }, create: { userId, roleId: roleByKey[roleKey] }, update: {} });
-  await link(admin.id, 'admin');
-  await link(admin.id, 'manager');
-  await link(admin.id, 'receptionist');
-  await link(manager.id, 'manager');
-  await link(manager.id, 'receptionist');
-  await link(guestUser.id, 'guest');
+  if (admin) { await link(admin.id, 'admin'); await link(admin.id, 'manager'); await link(admin.id, 'receptionist'); }
+  if (manager) { await link(manager.id, 'manager'); await link(manager.id, 'receptionist'); }
+  if (guestUser) await link(guestUser.id, 'guest');
 
   // Settings KV (matches admin Settings page shape)
   const settings = {
@@ -120,9 +126,10 @@ async function main() {
   for (const [number, reason] of Object.entries(MAINTENANCE)) {
     const room = await prisma.room.findFirst({ where: { number }, include: { roomType: true } });
     if (!room) continue;
-    const existing = await prisma.inventoryBlock.findFirst({ where: { roomId: room.id, checkIn: addDays(T, 7), checkOut: addDays(T, 37) } });
+    // Idempotent: one maintenance block per room, ever (dates from first run are kept)
+    const existing = await prisma.inventoryBlock.findFirst({ where: { roomId: room.id, kind: 'maintenance' } });
     if (existing) continue;
-    const block = await prisma.inventoryBlock.create({ data: { roomId: room.id, roomTypeId: room.roomTypeId, checkIn: addDays(T, 7), checkOut: addDays(T, 37), kind: 'maintenance', reason, createdByUserId: admin.id } });
+    const block = await prisma.inventoryBlock.create({ data: { roomId: room.id, roomTypeId: room.roomTypeId, checkIn: addDays(T, 7), checkOut: addDays(T, 37), kind: 'maintenance', reason, createdByUserId: admin?.id ?? null } });
     await prisma.roomAllocation.create({ data: { roomId: room.id, checkIn: block.checkIn, checkOut: block.checkOut, kind: 'block', state: 'occupying', sourceType: 'inventory_block', sourceId: block.id } });
   }
 
