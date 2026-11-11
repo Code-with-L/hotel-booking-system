@@ -104,7 +104,7 @@ jobs:
           docker build -f apps/web/Dockerfile -t stillhouse-web:ci .
 
       - name: Trivy — API image (CRITICAL, HIGH; blocks on fixable issues)
-        uses: aquasecurity/trivy-action@0.31.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: stillhouse-api:ci
           severity: CRITICAL,HIGH
@@ -112,7 +112,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Trivy — web image (CRITICAL, HIGH; blocks on fixable issues)
-        uses: aquasecurity/trivy-action@0.31.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: stillhouse-web:ci
           severity: CRITICAL,HIGH
