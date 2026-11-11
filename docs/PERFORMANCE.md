@@ -30,8 +30,8 @@ Availability budget breakdown after fix: 1 roomType query + 1 aggregated free-un
 
 - No CDN image optimization pipeline yet (photos are still placeholders).
 - Availability could cache per (dates, party) with 30 s TTL — unnecessary at this volume; revisit if public marketing traffic grows.
-- `npm audit`: 3 high in the **dev-only** Prisma CLI chain (documented D-029); runtime tree is clean.
+- `npm audit`: dev-only Prisma CLI chain resolved in M7 via root override `deepmerge-ts@^8.0.2` (advisory CVE-2026-40345); runtime tree is clean and Trivy CRITICAL/HIGH exits 0 on the API image. Remaining dev-chain residual: 3 moderate (autocannon→uuid/hyperid; dev-only, breaking-change fix).
 
 ## Verify after any performance change
 
-`npm test --workspace=@stillhouse/api` (20/20, includes the 8-way reservation race) + `npx playwright test` + the load-test script.
+`npm test --workspace=@stillhouse/api` (45/45, includes the 8-way reservation race) + `npx playwright test` (3/3) + `node tests/release-rehearsal.mjs` (20/20) + the load-test script.

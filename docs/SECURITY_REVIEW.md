@@ -7,7 +7,7 @@ Scope: authN/Z, sessions, RBAC, guest-data ownership, admin surface, payments/we
 | # | Area | Finding | Severity | Fix |
 |---|---|---|---|---|
 | 1 | Secrets | No secrets committed; `.env` gitignored; `.env.example` names-only; image build excludes `.env` via `.dockerignore` | ✔ pass | Verified by `git ls-files` scan in audit |
-| 2 | Deps | `npm audit`: 3 high in **dev-only** Prisma CLI chain (`deepmerge-ts ← @prisma/config ← prisma`) | Low (dev tooling) | Documented (D-029); runtime deps clean; Prisma 7 migration deferred to M7 (breaking config change) |
+| 2 | Deps | `npm audit`: 3 high in **dev-only** Prisma CLI chain (`deepmerge-ts ← @prisma/config ← prisma`) | Low (dev tooling) | **Resolved in M7**: root override `deepmerge-ts@^8.0.2`; suite 45/45 green post-change; Trivy exit 0; exception removed (`.trivyignore` deleted) |
 | 3 | Cookies | Session cookie would have worked over HTTP in dev | Medium | `COOKIE_SECURE` now **boot-enforced** in production (`env.js productionCheck`); dev default stays false |
 | 4 | Prod config | App could boot with weak/default secrets in "production" | High | Boot refuses: SESSION_SECRET ≥ 32 non-dev-default + `COOKIE_SECURE=true` + HTTPS `WEB_ORIGIN` required |
 | 5 | Rate limiting | Webhook + health could 429 (provider retries, probes) | Medium | Explicit bypass for `/api/v1/webhooks/*`, `/health`, `/ready` only |
@@ -43,6 +43,6 @@ M5 review covered authentication/authorization/sessions, RBAC matrix on all new 
 
 Deltas shipped in M5: (1) `GET /reservations/:reference` no longer returns phone/country when access is by possession of reference+email - staff and signed-in owners unchanged; (2) `/ready` and `/health` bypass session loading so orchestrators always reach them; database outages map to 503 SERVICE_UNAVAILABLE, never a bare 500; (3) success callback against a settled terminal payment is logged as an anomaly and never flips state; (4) refreshed `paymentFailed` notification path and arrival reminder sweeper reviewed - no data exposure, dedupe via email_outbox.
 
-Findings: no new critical or high issues. Medium: rehearsal finding (readiness probe fatal under DB outage) - fixed and covered by `tests/release-rehearsal.mjs` S17. Low/residual: npm audit - 3 high in dev-only Prisma CLI chain (D-029/D-049 scope; Prisma 7 upgrade is M7); R-7 eTIMS not certified (unchanged); heading-order (best-practice, 1 node, false-positive-assessed).
+Findings: no new critical or high issues. Medium: rehearsal finding (readiness probe fatal under DB outage) - fixed and covered by `tests/release-rehearsal.mjs` S17. Low/residual: R-7 eTIMS not certified (unchanged); heading-order (best-practice, 1 node, axe-core reports 0 violations; Lighthouse flags one H3 in the experiences rail — unchanged, P2). The dev-chain deepmerge-ts high advisory was remediated in M7 (override to 8.0.2; Trivy exit 0).
 
 See `docs/reports/M5.md` section 7 for the full table and classification summary.

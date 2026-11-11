@@ -2,7 +2,7 @@
 
 A fictional 28-room boutique luxury retreat above the Great Rift Valley, Naivasha, Kenya — a working reservation platform: public website, booking engine, M-Pesa-ready payments, guest accounts and an operating dashboard.
 
-**Status: M6 complete - staging stack rehearsed locally over real HTTPS (16/16 acceptance); CI/CD pipeline green on GitHub (run 43042020255). No public URL yet - host/domain/TLS are owner-gated. See `docs/reports/M6.md`, `docs/STAGING.md` and `docs/ACTIVATE_*.md`.**
+**Status: M7 complete - final engineering acceptance done, decision CONDITIONAL GO (not production-ready by itself). Staging rehearsed locally over real HTTPS (16/16); CI/CD green on GitHub; production deps `npm audit` = 0; deepmerge-ts CVE remediated. No public URL yet - host/domain/TLS and tax/credentials are owner-gated. See `docs/reports/M7.md`, `docs/FINAL_ACCEPTANCE.md`, `docs/STAGING.md` and `docs/ACTIVATE_*.md`.**
 
 ## Run it
 

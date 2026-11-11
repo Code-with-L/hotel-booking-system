@@ -63,9 +63,12 @@ Nothing here authorises an actual production deployment or spend against real in
 - [ ] First real reservation executed end-to-end and verified in the audit log + M-Pesa statement match.
 - [ ] Owner has the runbook (`docs/OPERATIONS.md`) and rollback contact.
 
-## Honest status block (fill at release time)
+## Honest status block (current truth at M7, 2026-11-12)
 
-- What is live vs simulated: ____
-- Daraja environment (sandbox/production): ____
-- eTIMS status (disabled/mock/sandbox/certified): ____
-- Who verified: ____  Date: ____
+Reproduce this block at any real release; never pre-fill it optimistically.
+
+- What is live vs simulated: **no payments are live.** M-Pesa is simulated (desk settlement / mocked callbacks); no real money has moved. Emails: recorded in `email_outbox` (no real SMTP). eTIMS invoices: mock series only; **zero fiscal invoices issued**. The only environment exercised is the local isolated staging stack (`https://staging.stillhouse.local:8443`, self-signed) — **no public deployment exists.**
+- Daraja environment: **not configured** (`MPESA_ENV=disabled`); API returns 503 `MPESA_NOT_CONFIGURED` by design.
+- eTIMS status: **disabled** (`ETIMS_ENVIRONMENT=disabled`); adapter tested with mocks only; not KRA-certified.
+- Engineering gate: CI green on `main` (Verify: 15/15, incl. e2e 3/3 + Trivy CRITICAL/HIGH clean on both images); API 45/45; rehearsal 20/20; axe 0/8; staging acceptance 16/16; M7 probes 15/15. Decision: **CONDITIONAL GO** (`docs/reports/M7.md` §14) — production blocked on §13 owner actions (hosting, domain/TLS, credentials, tax sign-off, monitoring).
+- Who verified: OpenCode engineering acceptance, 2026-11-12. Live end-to-end guest verification **not possible** (no public URL; no provider credentials).

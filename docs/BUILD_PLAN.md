@@ -1,6 +1,6 @@
 # Build Plan - The Stillhouse
 
-**Status:** Approved direction at M0 (2026-11-11). Milestone gates are mandatory. M6 complete (2026-11-11) — staging stack rehearsed locally; public deployment owner-gated; see `docs/reports/M6.md`.
+**Status:** Approved direction at M0 (2026-11-11). Milestone gates are mandatory. M7 complete (2026-11-12) — final engineering acceptance done; CONDITIONAL GO; production owner-gated; see `docs/reports/M7.md` and `docs/FINAL_ACCEPTANCE.md`.
 
 ## Working agreements
 - Small, reviewable commits; each commit compiles/passes tests for what it touches.
@@ -42,8 +42,11 @@ Daraja token cache + single-flight refresh + truthful 502/503 failure mapping; t
 ### M6 - Staging deployment & operational commissioning ✓ (2026-11-11, this milestone)
 Isolated local staging stack (Docker project `stillhouse-staging`) with production-equivalent images, TLS via local CA, persistent PG16 volume, loopback-only exposure; GitHub Actions CI/CD (verify job enforces API tests on PG16 + build + e2e + image build + Trivy scan; staging deploy is manual + owner-gated); production boot-guard verified; `docs/STAGING.md`, `docs/RELEASE_CHECKLIST.md` staging section, `docs/reports/M6.md`; rehearsal evidence: acceptance 16/16 over real HTTPS, backup+restore drill with exclusion constraint verified, restart/DB-outage/boot-guard drills. **No public URL, domain, DNS, or provider verification yet — owner-gated (M7).** See `docs/reports/M6.md` and `docs/STAGING.md`.
 
-### M7+ (owner's call)
-**M7 — Public staging launch & owner verification:** host + managed PG16 + domain + TLS; Daraja sandbox live; SMTP live; eTIMS track (optional); monitoring sign-off; photography commission; final cutover decision. Recommended M7 scope: `docs/reports/M6.md` §15.
+### M7 - Final release acceptance & go/no-go ✓ (2026-11-12, this milestone)
+Independent acceptance re-verified without rebuilding M1-M6: guest/staff/management journeys, live probes P1-P14 over staging HTTPS (15/15), DB constraint verification via psql (exclusion constraint, CHECKs, UNIQUE idempotency keys), concurrency re-verified (5×201/2×409 twice; S16 1 winner/4 conflicts), security probes (auth matrix, rate-limit 429 live, CORS, cookies, webhook contract), `npm audit --omit=dev` = 0, CVE-2026-40345 **remediated** (root override `deepmerge-ts@^8.0.2`; Trivy CRITICAL/HIGH exit 0; `.trivyignore` exception removed), quote math verified live to the cent, axe 0/8 pages, Lighthouse lab: perf 58 / a11y 98 / BP 75 / SEO 100 / CLS 0 (indicative, loopback). Report: `docs/reports/M7.md`; concise reference: `docs/FINAL_ACCEPTANCE.md`. **Decision: CONDITIONAL GO — engineering acceptance satisfactory; production remains owner-gated** (hosting/domain/DNS/TLS, credentials, tax sign-off, monitoring, photography). See `docs/reports/M7.md` §12-14.
+
+### Post-M7 (owner's call — in order)
+**Commissioning sequence (owner-held):** host + managed PG16 (PITR) → domain + DNS + TLS → host secrets → tax sign-off → M-Pesa sandbox E2E → SMTP deliverability → (eTIMS track if fiscal in scope) → monitoring + runbook walkthrough → photography → production decision. Full checklist: `docs/FINAL_ACCEPTANCE.md` and `docs/reports/M7.md` §13.
 
 ## Open risks (register)
 - R1 — Arena output quality/deviation: mitigated by the staging gate; rejection criteria pre-agreed (HANDOFF_CHECKLIST §1–5).
