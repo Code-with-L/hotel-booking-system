@@ -85,11 +85,9 @@ jobs:
 
       - name: E2E database — create and migrate stillhouse_e2e
         env:
-          PGPASSWORD: stillhouse_ci_password
           DATABASE_URL: postgresql://stillhouse:stillhouse_ci_password@localhost:5432/stillhouse_e2e?schema=public
         run: |
-          sudo apt-get update && sudo apt-get install -y postgresql-client
-          psql -h localhost -U stillhouse -d postgres -c 'CREATE DATABASE stillhouse_e2e'
+          node -e "const { Client } = require('pg'); (async () => { const c = new Client({ connectionString: 'postgresql://stillhouse:stillhouse_ci_password@localhost:5432/postgres' }); await c.connect(); await c.query('DROP DATABASE IF EXISTS stillhouse_e2e WITH (FORCE)'); await c.query('CREATE DATABASE stillhouse_e2e'); await c.end(); })().catch((e) => { console.error(e); process.exit(1); })"
           npx prisma migrate deploy
           node prisma/seed.js
 
