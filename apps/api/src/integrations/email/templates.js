@@ -102,6 +102,59 @@ export const TEMPLATES = {
     ].join('\n'),
   },
 
+  paymentFailed: {
+    subject: (v) => `Payment not completed - ${v.reference}`,
+    html: (v) => layout({
+      title: `Payment not completed - ${v.reference}`,
+      preheader: `The payment for ${v.reference} did not go through.`,
+      bodyHtml: `<div style="font-family:Georgia,serif;font-size:30px;color:#242722;margin:0 0 14px 0;">Payment not completed.</div>
+      <p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;">Dear ${escapeHtml(v.firstName)},</p>
+      <p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;">We could not complete the payment for your reservation <strong>${escapeHtml(v.reference)}</strong>. No money has been taken${v.reason ? ` — ${escapeHtml(v.reason)}` : ''}. The room being held for you has been released.</p>
+      <p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;">If you would like to complete the booking, please start again, or speak to the front desk — they can confirm your reservation at the property.</p>`,
+    }),
+    text: (v) => [
+      `THE STILLHOUSE - Payment not completed`,
+      ``,
+      `Dear ${v.firstName},`,
+      ``,
+      `We could not complete the payment for your reservation ${v.reference}.`,
+      `No money has been taken.`,
+      v.reason ? `Reason: ${v.reason}` : ``,
+      `The room held for you has been released. Please book again or speak to the front desk.`,
+      `The Stillhouse · reservations@stillhouse.example · +254 000 000 000`,
+    ].join('\n'),
+  },
+
+  arrivalReminder: {
+    subject: (v) => `Tomorrow at The Stillhouse - ${v.reference}`,
+    html: (v) => layout({
+      title: `Tomorrow at The Stillhouse - ${v.reference}`,
+      preheader: `We look forward to welcoming you tomorrow, ${v.firstName}.`,
+      bodyHtml: `<div style="font-family:Georgia,serif;font-size:30px;color:#242722;margin:0 0 14px 0;">We expect you tomorrow.</div>
+      <p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;">Dear ${escapeHtml(v.firstName)},</p>
+      <p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;">A gentle reminder that your stay begins tomorrow. Check-in is from 14:00. If you expect to arrive later, simply let us know.</p>
+      ${row('Reference', `<strong>${escapeHtml(v.reference)}</strong>`)}
+      ${row('Room', escapeHtml(v.roomName))}
+      ${row('Check-in', escapeHtml(fmtDateLong(v.checkIn)))}
+      <p style="font-family:Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;">Please quote your reference at the front desk. Safe travels to the valley.</p>`,
+    }),
+    text: (v) => [
+      `THE STILLHOUSE - Tomorrow`,
+      ``,
+      `Dear ${v.firstName},`,
+      ``,
+      `A reminder that your stay begins tomorrow. Check-in is from 14:00.`,
+      `If you expect to arrive later, please let us know.`,
+      ``,
+      `Reference: ${v.reference}`,
+      `Room: ${v.roomName}`,
+      `Check-in: ${fmtDateLong(v.checkIn)}`,
+      ``,
+      `Please quote your reference at the front desk.`,
+      `The Stillhouse · reservations@stillhouse.example · +254 000 000 000`,
+    ].join('\n'),
+  },
+
   bookingCancelled: {
     subject: (v) => `Reservation cancelled — ${v.reference}`,
     html: (v) => layout({

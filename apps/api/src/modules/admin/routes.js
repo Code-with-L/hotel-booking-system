@@ -634,6 +634,120 @@ adminRouter.get('/admin/reports/financial-summary', requireRole('manager', 'admi
   } catch (err) { next(err); }
 });
 
+// ---------- eTIMS invoice history (manager/admin only, read-only) ----------
+adminRouter.get('/admin/etims/invoices', requireRole('manager', 'admin'), async (req, res, next) => {
+  try {
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize) || 25));
+    const status = req.query.status && ['skipped', 'pending', 'issued', 'failed'].includes(String(req.query.status))
+      ? String(req.query.status) : undefined;
+    const where = status ? { status } : {};
+    const [total, rows] = await Promise.all([
+      prisma.taxInvoice.count({ where }),
+      prisma.taxInvoice.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: { reservation: { select: { reference: true, status: true, checkIn: true } } },
+      }),
+    ]);
+    res.json({
+      total, page, pageSize,
+      countsByStatus: await prisma.taxInvoice.groupBy({ by: ['status'], _count: { _all: true } })
+        .then((g) => Object.fromEntries(g.map((x) => [x.status, x._count._all]))),
+      rows: rows.map((inv) => ({
+        id: inv.id,
+        reference: inv.reservation?.reference,
+        reservationStatus: inv.reservation?.status,
+        status: inv.status,
+        receiptNumber: inv.receiptNumber,
+        etimsInvoiceNumber: inv.etimsInvoiceNumber,
+        totalMinor: inv.totalMinor,
+        taxMinor: inv.taxMinor,
+        currency: inv.currency,
+        attempts: inv.attempts,
+        lastError: inv.lastError,
+        issuedAt: inv.issuedAt,
+        createdAt: inv.createdAt,
+      })),
+    });
+  } catch (err) { next(err); }
+});
+
+// ---------- Payment health / reconciliation findings (manager/admin only, read-only) ----------
+// Never mutates financial records. Findings point staff at anomalies to resolve manually.
+adminRouter.get('/admin/reports/payment-health', requireRole('manager', 'admin'), async (_req, res, next) => {
+  try {
+    const now = new Date();
+    const minus45m = new Date(now - 45 * 60 * 1000);
+    const minus60m = new Date(now - 60 * 60 * 1000);
+    const minus30d = new Date(now - 30 * 86400000);
+    const [
+      dupAttempts, stalePending, amountMismatch, overpaid, cancelledPaid, failed30d,
+      invoiceFailed, invoicePendingStale, succeededVsAttemptsRows, refundByReservation,
+    ] = await Promise.all([
+      prisma.$queryRaw`SELECT "providerReference", count(*)::int AS n FROM payment_attempt
+        WHERE "providerReference" IS NOT NULL GROUP BY "providerReference" HAVING count(*) > 1`,
+      prisma.payment.findMany({
+        where: { provider: 'mpesa', status: 'pending', createdAt: { lt: minus45m } },
+        select: { id: true, providerReference: true, createdAt: true, reservation: { select: { reference: true } } },
+        orderBy: { createdAt: 'asc' }, take: 25,
+      }),
+      prisma.$queryRaw`SELECT a.id, a."providerReference", a."amountMinor" AS attempt_minor, p."amountMinor" AS payment_minor
+        FROM payment_attempt a JOIN payment p ON p.id = a."paymentId"
+        WHERE a."amountMinor" IS NOT NULL AND a."amountMinor" <> p."amountMinor" LIMIT 25`,
+      prisma.$queryRaw`SELECT r.reference, r."totalMinor", COALESCE(p.paid, 0)::bigint AS paid
+        FROM reservation r JOIN (SELECT "reservationId", SUM("amountMinor") AS paid FROM payment WHERE status = 'succeeded' GROUP BY "reservationId") p ON p."reservationId" = r.id
+        WHERE p.paid > r."totalMinor" ORDER BY r."checkIn" DESC LIMIT 25`,
+      prisma.$queryRaw`SELECT r.reference, r."guestId", COALESCE(p.paid, 0)::bigint AS paid, COALESCE(rf.refunded, 0)::bigint AS refunded
+        FROM reservation r
+        JOIN (SELECT "reservationId", SUM("amountMinor") AS paid FROM payment WHERE status = 'succeeded' GROUP BY "reservationId") p ON p."reservationId" = r.id
+        LEFT JOIN (SELECT "reservationId", SUM("amountMinor") AS refunded FROM payment_attempt WHERE status = 'refunded' GROUP BY "reservationId") rf ON rf."reservationId" = r.id
+        WHERE r.status = 'cancelled' AND COALESCE(p.paid, 0) > COALESCE(rf.refunded, 0)
+        ORDER BY r."checkIn" DESC LIMIT 25`,
+      prisma.payment.count({ where: { status: 'failed', updatedAt: { gte: minus30d } } }),
+      prisma.taxInvoice.findMany({ where: { status: 'failed' }, select: { id: true, reservation: { select: { reference: true } }, attempts: true, lastError: true }, orderBy: { createdAt: 'asc' }, take: 25 }),
+      prisma.taxInvoice.findMany({ where: { status: 'pending', createdAt: { lt: minus60m } }, select: { id: true, reservation: { select: { reference: true } }, attempts: true }, orderBy: { createdAt: 'asc' }, take: 25 }),
+      prisma.$queryRaw`SELECT
+        (SELECT COALESCE(SUM("amountMinor"), 0) FROM payment WHERE status = 'succeeded')::bigint AS payments,
+        (SELECT COALESCE(SUM("amountMinor"), 0) FROM payment_attempt WHERE status = 'succeeded')::bigint AS attempts`,
+      prisma.paymentAttempt.aggregate({ where: { status: 'refunded' }, _sum: { amountMinor: true } }),
+    ]);
+
+    const sumPayments = Number(succeededVsAttemptsRows[0]?.payments ?? 0);
+    const sumAttempts = Number(succeededVsAttemptsRows[0]?.attempts ?? 0);
+    const refundTotalMinor = refundByReservation._sum.amountMinor || 0;
+
+    const guestIds = [...new Set(cancelledPaid.map((r) => r.guestId))];
+    const guests = guestIds.length
+      ? await prisma.guest.findMany({ where: { id: { in: guestIds } }, select: { id: true, firstName: true, lastName: true } })
+      : [];
+    const guestMap = new Map(guests.map((g) => [g.id, g]));
+
+    const findings = [
+      { id: 'payments_without_reservation', severity: 'high', label: 'Payments without a matching reservation', count: 0, action: 'Cannot occur (FK enforced); verify ledger integrity.' },
+      { id: 'duplicate_provider_transactions', severity: 'high', label: 'Duplicate provider transaction references', count: dupAttempts.length, samples: dupAttempts.slice(0, 5).map((d) => ({ reference: d.providerReference, attempts: d.n })), action: 'Inspect duplicate rows; providers retry - one of each is normally fine at attempt level.' },
+      { id: 'amount_mismatches', severity: 'high', label: 'Attempt/payment amount mismatches', count: amountMismatch.length, samples: amountMismatch.slice(0, 5).map((d) => ({ id: d.id, reference: d.providerReference, attemptMinor: Number(d.attempt_minor), paymentMinor: Number(d.payment_minor) })), action: 'Investigate: amounts frozen at initiation; a mismatch indicates tampering or provider error.' },
+      { id: 'overpaid_reservations', severity: 'high', label: 'Reservations paid more than their total', count: overpaid.length, samples: overpaid.slice(0, 5).map((d) => ({ reference: d.reference, totalMinor: Number(d.totalMinor), paidMinor: Number(d.paid) })), action: 'Settle the excess at the desk or refund the difference.' },
+      { id: 'cancelled_with_outstanding_payment', severity: 'high', label: 'Cancelled reservations with captured payments not (fully) refunded', count: cancelledPaid.length, samples: cancelledPaid.slice(0, 5).map((d) => ({ reference: d.reference, guestName: guestMap.has(d.guestId) ? `${guestMap.get(d.guestId).firstName} ${guestMap.get(d.guestId).lastName}`.trim() : undefined, paidMinor: Number(d.paid), refundedMinor: Number(d.refunded) })), action: 'Process the refund via the manager refund flow or reconcile with the guest.' },
+      { id: 'stale_pending_payments', severity: 'medium', label: 'Pending M-Pesa transactions older than 45 minutes', count: stalePending.length, samples: stalePending.slice(0, 5).map((p) => ({ id: p.id, reference: p.reservation?.reference, checkoutRequestId: p.providerReference, createdAt: p.createdAt })), action: 'Use Requery (manager) to ask Daraja for the truth; the sweeper does this automatically.' },
+      { id: 'failed_payments_last_30d', severity: 'low', label: 'Failed payments (last 30 days)', count: failed30d, action: 'Informational only. No action unless a guest reports being charged.' },
+      { id: 'invoices_failed', severity: 'medium', label: 'eTIMS invoices failed to issue', count: invoiceFailed.length, samples: invoiceFailed.slice(0, 5).map((i) => ({ id: i.id, reference: i.reservation?.reference, attempts: i.attempts, error: i.lastError })), action: 'Check eTIMS configuration; retry runs hourly (sweeper) up to 5 attempts.' },
+      { id: 'invoices_pending_stale', severity: 'low', label: 'eTIMS invoices pending older than 60 minutes', count: invoicePendingStale.length, samples: invoicePendingStale.slice(0, 5).map((i) => ({ id: i.id, reference: i.reservation?.reference, attempts: i.attempts })), action: 'Check eTIMS pipeline; retry runs hourly.' },
+      { id: 'succeeded_sum_mismatch', severity: sumAttempts === sumPayments ? 'none' : 'high', label: 'Attempt-vs-payment succeeded totals', count: sumAttempts === sumPayments ? 0 : 1, detail: `payments=${sumPayments} attempts=${sumAttempts}`, action: 'Totals must match; if they do not, inspect payment_attempt rows directly.' },
+    ].filter((f) => f.count > 0);
+
+    res.json({
+      currency: 'KES',
+      generatedAt: now.toISOString(),
+      totals: { succeededMinor: sumPayments, attemptsSucceededMinor: sumAttempts, refundsMinor: refundTotalMinor },
+      healthy: findings.every((f) => f.severity === 'none' || f.severity === 'low'),
+      findings,
+    });
+  } catch (err) { next(err); }
+});
+
 // ---------- Audit log ----------
 adminRouter.get('/admin/audit-log', requireRole('admin'), async (req, res, next) => {
   try {

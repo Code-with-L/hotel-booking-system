@@ -1,6 +1,6 @@
 # Build Plan - The Stillhouse
 
-**Status:** Approved direction at M0 (2026-11-11). Milestone gates are mandatory. M4 complete (2026-11-11) — owner-gated activation items remain; see `docs/reports/M4.md`.
+**Status:** Approved direction at M0 (2026-11-11). Milestone gates are mandatory. M5 complete (2026-11-11) — owner-gated activation items remain; see `docs/reports/M5.md`.
 
 ## Working agreements
 - Small, reviewable commits; each commit compiles/passes tests for what it touches.
@@ -36,8 +36,11 @@ Visual pass on the guest-facing Arena experience (motion, navigation, mobile); n
 ### M4 - Administrative Operations ✓ (2026-11-11, this milestone)
 Full operational maturity for the people who run the hotel: live dashboard (needs action, confirmed, payments summary, outstanding, cancellations 30d, occupancy/revenue), reservation workflow with paid-status badges and itemised pricing drawers (confirmed/cancel check-in/check-out with compare-and-swap transitions and audit in one tx), room + rate management with a hard no-override maintenance guard (409 + blocking references), room allocation history, guest CRM operational notes (audit-written), manager-only financial overview, receptionist+ history endpoint, audit-failure atomicity, concurrency hardening of allocation (`FOR UPDATE` + jittered backoff), and the M4 decision log. Backend 31/31 (8 consecutive clean runs), e2e 3/3, build clean, Docker Dockerfile set unchanged (verified M2). See `docs/reports/M4.md` and DECISIONS M4 block (D-035..D-040).
 
-### M5+ (owner's call)
-Remaining scope is the owner's call: pricing/tax sign-off, live Daraja registration, eTIMS certification (or explicit decision to defer paid launch until certified), photography commission, booking-modification (D-027 reopen), final release rehearsal. Recommended M5 scope: see `docs/reports/M4.md` §12.
+### M5 - External integrations & release readiness ✓ (2026-11-11, this milestone)
+Daraja token cache + single-flight refresh + truthful 502/503 failure mapping; terminal-state callback idempotency with contradiction logging; new manager-only `GET /admin/reports/payment-health` (duplicate refs, amount mismatches, overpayments, cancelled-with-capture, stale pendings, invoice failures, attempt/payment total cross-check) and read-only eTIMS invoice history (`GET /admin/etims/invoices` + admin panel); transactional email extended (`paymentFailed`, `arrivalReminder` + afterFailed hooks); readiness probe bypass of session loading with 503 mapping (found by rehearsal); guest-detail PII minimization; WCAG AA contrast fixes (tokens only); self-hosted fonts, meta description, robots.txt, favicon. Tests: API 45/45, e2e 3/3, rehearsal 20/20, axe 0 violations, Lighthouse SEO 1.0. See `docs/reports/M5.md` and D-041..D-049.
+
+### M6+ (owner's call)
+Activation & verification milestone (owner-executed, engineering-assisted): Daraja sandbox → certified production cutover; eTIMS OSCU certification; SMTP go-live + deliverability (SPF/DKIM/DMARC); tax sign-off; booking-modification decision (D-027); first real release rehearsal on staging; owner sign-off against `docs/RELEASE_CHECKLIST.md`; photography commission; launch. Recommended M6 scope: see `docs/reports/M5.md` §15.
 
 ## Open risks (register)
 - R1 — Arena output quality/deviation: mitigated by the staging gate; rejection criteria pre-agreed (HANDOFF_CHECKLIST §1–5).

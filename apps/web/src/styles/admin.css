@@ -423,3 +423,17 @@
   outline: none;
   border-color: var(--olive);
 }
+
+.health-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.health-sample {
+  background: var(--limestone-2, #EDE9DE);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  font-size: 11px;
+  margin-right: 6px;
+}

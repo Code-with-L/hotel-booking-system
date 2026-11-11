@@ -36,3 +36,13 @@ Scope: authN/Z, sessions, RBAC, guest-data ownership, admin surface, payments/we
 ## Verified-by
 
 `tests/auth.test.js` (401/403/200 matrix + guest isolation), `tests/booking.test.js` (race, idempotency, cancel releases), `tests/mpesa.test.js` (mocked STK push payload, requery transitions), plus manual config-refusal check in production mode (boot refused with missing `COOKIE_SECURE`).
+
+## M5 addendum (2026-11-11)
+
+M5 review covered authentication/authorization/sessions, RBAC matrix on all new endpoints, CSRF/CORS/rate-limiting, input validation, SQL (all parameterised), webhook security incl. terminal-state idempotency, payment security, secret handling, audit integrity, guest privacy and production error responses.
+
+Deltas shipped in M5: (1) `GET /reservations/:reference` no longer returns phone/country when access is by possession of reference+email - staff and signed-in owners unchanged; (2) `/ready` and `/health` bypass session loading so orchestrators always reach them; database outages map to 503 SERVICE_UNAVAILABLE, never a bare 500; (3) success callback against a settled terminal payment is logged as an anomaly and never flips state; (4) refreshed `paymentFailed` notification path and arrival reminder sweeper reviewed - no data exposure, dedupe via email_outbox.
+
+Findings: no new critical or high issues. Medium: rehearsal finding (readiness probe fatal under DB outage) - fixed and covered by `tests/release-rehearsal.mjs` S17. Low/residual: npm audit - 3 high in dev-only Prisma CLI chain (D-029/D-049 scope; Prisma 7 upgrade is M7); R-7 eTIMS not certified (unchanged); heading-order (best-practice, 1 node, false-positive-assessed).
+
+See `docs/reports/M5.md` section 7 for the full table and classification summary.

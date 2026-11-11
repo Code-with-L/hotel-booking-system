@@ -15,6 +15,8 @@ For front-desk, management and the owner. No code required for daily operation.
 
 ## Payment reconciliation (daily, 5 minutes)
 
+- Operations -> Financials (manager+): collected/outstanding/refunds/cancellation fees/pending value, outstanding balances, and the Payment health panel - duplicate references, amount mismatches, overpaid reservations, cancelled-with-capture, stale pending M-Pesa transactions, and invoice failures. Findings are informational; correct records only through the existing flows (desk settlement, requery, refunds) - never by editing the ledger.
+- Tomorrow's arrivals get an automated reminder email the night before (deduplicated per reservation; sent only when SMTP is configured, otherwise recorded as skipped in email_outbox).
 - Operations → Reports → Reconciliation (`GET /api/v1/admin/reports/reconciliation?from&to`): lists payments with reference, provider, amount, status. Tick off against M-Pesa statements / bank deposits.
 - Pending STK pushes that never resolved: ask the guest, then (manager+) use **Requery** on the payment (`POST /admin/payments/:id/requery`). It asks Daraja for the truth: confirmed / still pending / failed (with room released). KSh settles; the ledger follows.
 - Failed payments release the room automatically within the hour (sweeper) — or instantly on a failed callback/requery.

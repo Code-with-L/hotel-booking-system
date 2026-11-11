@@ -33,7 +33,7 @@
 
 ## Timeouts & reconciliation
 
-- 20s HTTP timeouts on Daraja calls; stale pending pushes are auto-requeried every 60s after 45 min, and hourly via sweeper; admin requery anytime; amount/reference mismatches are rejected and audit-logged; duplicate callbacks are idempotent no-ops.
+- 20s HTTP timeouts on Daraja calls; OAuth tokens cached (~50 min TTL) with single-flight refresh; stale pending pushes are auto-requeried every 60s after 45 min, and hourly via sweeper; admin requery anytime; amount/reference mismatches are rejected and audit-logged; duplicate callbacks are idempotent no-ops; a success callback against a settled terminal payment is logged as an anomaly and never flips the payment.
 
 ## Verification evidence level
 

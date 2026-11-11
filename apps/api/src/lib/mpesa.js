@@ -15,6 +15,12 @@ const notConfigured = () => new ApiError(
   'M-Pesa is not configured. Set MPESA_ENV=sandbox|production with MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_SHORTCODE, MPESA_PASSKEY and MPESA_CALLBACK_URL. No money can be taken until this is done.'
 );
 
+// POSTs to Daraja; transport failures map to a truthful 502 (never a 500 or a fake success).
+const postJson = (url, { auth, body } = {}) =>
+  fetchJson(url, { method: 'POST', auth, body }).catch(() => {
+    throw new ApiError(502, 'MPESA_UPSTREAM_ERROR', 'M-Pesa is unreachable. Please try again in a moment.');
+  });
+
 async function fetchJson(url, { method = 'GET', headers = {}, body, auth } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20_000);
@@ -34,14 +40,39 @@ async function fetchJson(url, { method = 'GET', headers = {}, body, auth } = {})
   }
 }
 
-export async function getAccessToken() {
-  if (!mpesaConfigured()) throw notConfigured();
+// OAuth token cache (Daraja access tokens live ~3600s; we refresh well before expiry).
+// Single-flight: concurrent callers share one in-flight token request.
+let cachedToken = null; // { token, expiresAt }
+let tokenFlight = null;
+
+// Test hook: reset the module-level token cache between suites.
+export const resetTokenCache = () => { cachedToken = null; tokenFlight = null; };
+
+async function fetchAccessToken() {
   const auth = Buffer.from(`${env.mpesaConsumerKey}:${env.mpesaConsumerSecret}`).toString('base64');
-  const { status, json } = await fetchJson(`${baseUrl()}/oauth/v1/generate?grant_type=client_credentials`, { auth: `Basic ${auth}` });
+  let status, json;
+  try {
+    ({ status, json } = await fetchJson(`${baseUrl()}/oauth/v1/generate?grant_type=client_credentials`, { auth: `Basic ${auth}` }));
+  } catch {
+    // Network/abort/timeout - treat as upstream outage, not a 500. No internals are leaked to clients.
+    throw new ApiError(502, 'MPESA_UPSTREAM_ERROR', 'M-Pesa is unreachable. Please try again in a moment.');
+  }
   if (status !== 200 || !json?.access_token) {
     throw new ApiError(502, 'MPESA_UPSTREAM_ERROR', 'Could not authenticate with M-Pesa (Daraja). Please try again later.');
   }
   return json.access_token;
+}
+
+export async function getAccessToken() {
+  if (!mpesaConfigured()) throw notConfigured();
+  const now = Date.now();
+  if (cachedToken && cachedToken.expiresAt > now) return cachedToken.token;
+  if (!tokenFlight) {
+    tokenFlight = fetchAccessToken()
+      .then((token) => { cachedToken = { token, expiresAt: Date.now() + 50 * 60 * 1000 }; return token; })
+      .finally(() => { tokenFlight = null; });
+  }
+  return tokenFlight;
 }
 
 export async function stkPush({ phone, amountMajor, accountReference, transactionDesc }) {
@@ -62,7 +93,7 @@ export async function stkPush({ phone, amountMajor, accountReference, transactio
     AccountReference: accountReference,
     TransactionDesc: transactionDesc,
   };
-  const { status, json } = await fetchJson(`${baseUrl()}/mpesa/stkpush/v1/processrequest`, { method: 'POST', auth: `Bearer ${token}`, body });
+  const { status, json } = await postJson(`${baseUrl()}/mpesa/stkpush/v1/processrequest`, { auth: `Bearer ${token}`, body });
   if (status !== 200 || !json?.CheckoutRequestID) {
     throw new ApiError(502, 'MPESA_UPSTREAM_ERROR', json?.errorMessage || json?.ResponseDescription || 'M-Pesa rejected the payment request. Please try again.');
   }
@@ -83,7 +114,7 @@ export async function stkQuery(checkoutRequestId) {
     Timestamp: timestamp,
     CheckoutRequestID: checkoutRequestId,
   };
-  const { status, json, raw } = await fetchJson(`${baseUrl()}/mpesa/stkpushquery/v1/query`, { method: 'POST', auth: `Bearer ${token}`, body });
+  const { status, json, raw } = await postJson(`${baseUrl()}/mpesa/stkpushquery/v1/query`, { auth: `Bearer ${token}`, body });
   if (status !== 200) {
     throw new ApiError(502, 'MPESA_UPSTREAM_ERROR', `STK query failed (HTTP ${status}). ${String(raw).slice(0, 200)}`);
   }

@@ -11,6 +11,15 @@ export const getDashboard = () => request("/admin/dashboard");
 export const getRoomHistory = (number) => request(`/admin/rooms/${encodeURIComponent(number)}/history`);
 export const updateGuestNotes = (guestId, notes) => request(`/admin/guests/${encodeURIComponent(guestId)}`, { method: "PATCH", body: { notes } });
 export const getFinancialSummary = () => request("/admin/reports/financial-summary");
+export const getPaymentHealth = () => request("/admin/reports/payment-health");
+export const getEtimsInvoices = (params = {}) => {
+  const q = new URLSearchParams();
+  if (params.status) q.set("status", params.status);
+  if (params.page) q.set("page", String(params.page));
+  if (params.pageSize) q.set("pageSize", String(params.pageSize));
+  const qs = q.toString();
+  return request(`/admin/etims/invoices${qs ? `?${qs}` : ""}`);
+};
 export const getReservationDetail = (reference) => request(`/admin/reservations/${encodeURIComponent(reference)}`);
 
 export async function getReservations() {

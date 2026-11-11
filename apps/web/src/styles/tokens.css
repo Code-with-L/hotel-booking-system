@@ -4,9 +4,9 @@
   --limestone: #f1efe8;
   --parchment: #e8e4da;
   --ink: #242722;
-  --stone: #77786f;
+  --stone: #66675f;
   --olive: #535b45;
-  --terracotta: #a66f56;
+  --terracotta: #8a563f; /* 5.24:1 on limestone, 4.75:1 on parchment (WCAG AA) */
   --charcoal: #252823;
   --warm-white: #f1efe8;
   --border: #d7d3c9;
@@ -15,7 +15,7 @@
   /* Functional derivatives (opacity of the tokens above, not new hues) */
   --ink-soft: rgba(36, 39, 34, 0.78);
   --on-dark: #f1efe8;
-  --on-dark-muted: rgba(241, 239, 232, 0.64);
+  --on-dark-muted: rgba(241, 239, 232, 0.78); /* 8.45:1 on #252823 (WCAG AA) */
   --border-dark: rgba(241, 239, 232, 0.16);
   --scrim: rgba(24, 26, 22, 0.34);
   --error: #a4452f; /* functional: form errors only */

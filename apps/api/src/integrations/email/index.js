@@ -141,6 +141,35 @@ export const sendBookingCancelled = ({ guest, reservation, cancelFeeMinor }) =>
     relatedId: reservation.id,
   });
 
+export const sendPaymentFailed = ({ guest, reservation, reason }) =>
+  sendEmail({
+    template: 'paymentFailed',
+    to: guest.email,
+    dedupeKey: `payment-failed:${reservation.reference}`,
+    vars: {
+      firstName: guest.firstName,
+      reference: reservation.reference,
+      reason: reason || '',
+    },
+    relatedType: 'reservation',
+    relatedId: reservation.id,
+  });
+
+export const sendArrivalReminder = ({ guest, reservation, room }) =>
+  sendEmail({
+    template: 'arrivalReminder',
+    to: guest.email,
+    dedupeKey: `arrival-reminder:${reservation.reference}`,
+    vars: {
+      firstName: guest.firstName,
+      reference: reservation.reference,
+      roomName: room?.name || 'Your room',
+      checkIn: reservation.checkIn.toISOString().slice(0, 10),
+    },
+    relatedType: 'reservation',
+    relatedId: reservation.id,
+  });
+
 export const sendPasswordReset = ({ user, guest, token }) =>
   sendEmail({
     template: 'passwordReset',

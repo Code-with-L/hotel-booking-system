@@ -59,6 +59,7 @@ async function sweepStalePayments() {
           const { afterConfirmed } = await import('./lib/postBookingEvents.js');
           await afterConfirmed(payment.reservationId);
           logger.info({ paymentId: payment.id }, 'stale pending payment confirmed via STK query');
+
         } else if (query.resultCode !== null && query.resultCode !== 9999) {
           await prisma.$transaction(async (tx) => {
             await tx.paymentAttempt.create({
@@ -68,6 +69,8 @@ async function sweepStalePayments() {
             const { releaseAllocations } = await import('./lib/allocations.js');
             await releaseAllocations(tx, { sourceType: 'reservation', sourceId: payment.reservationId, state: 'released' });
           });
+          const { afterFailed } = await import('./lib/postBookingEvents.js');
+          await afterFailed({ reservationId: payment.reservationId, reason: query.resultDesc || `stk_query_${query.resultCode}` });
           logger.info({ paymentId: payment.id }, 'stale pending payment failed via STK query');
         }
       } catch (err) {
@@ -79,6 +82,26 @@ async function sweepStalePayments() {
   }
 }
 
+// Upcoming-arrival reminders: tomorrow's confirmed check-ins, deduped via the email outbox.
+async function sweepArrivalReminders() {
+  try {
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    const dayStart = new Date(`${tomorrow}T00:00:00.000Z`);
+    const dayEnd = new Date(dayStart.getTime() + 86400000);
+    const reservations = await prisma.reservation.findMany({
+      where: { status: 'confirmed', checkIn: { gte: dayStart, lt: dayEnd } },
+      include: { guest: true, roomType: true },
+      take: 200,
+    });
+    if (!reservations.length) return;
+    const { sendArrivalReminders } = await import('./lib/postBookingEvents.js');
+    await sendArrivalReminders({ reservations });
+    logger.info({ count: reservations.length, tomorrow }, 'arrival reminders dispatched');
+  } catch (err) {
+    logger.error({ err: String(err?.message || err) }, 'arrival reminder sweeper failed');
+  }
+}
+
 const app = createApp();
 const server = app.listen(env.port, () => {
   logger.info({ port: env.port }, 'stillhouse-api listening');
@@ -87,6 +110,7 @@ const server = app.listen(env.port, () => {
 const sweeper = setInterval(() => {
   sweepExpiredHolds();
   sweepStalePayments();
+  sweepArrivalReminders().catch((err) => logger.error({ err: String(err?.message || err) }, 'arrival reminder failed'));
   retryFailedInvoices().catch((err) => logger.error({ err: String(err?.message || err) }, 'invoice retry failed'));
 }, SWEEP_INTERVAL_MS);
 

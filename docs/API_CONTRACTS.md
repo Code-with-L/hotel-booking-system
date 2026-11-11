@@ -7,6 +7,7 @@ CSRF: SameSite=Lax cookie + JSON-only APIs; CORS allowlist (`WEB_ORIGIN`); crede
 - Reservation references: `STL-YYYY-NNNNNN` (e.g. `STL-2026-S000423`).
 - Reservation states: `pending → confirmed → checked_in → checked_out`; `pending|confirmed → cancelled`; `pending → expired` (hold TTL).
 - Guests can book without an account. Online payment initiation requires either a session owning the reservation or `email` matching the reservation (possession of reference + booking email authorises initiation only).
+- M5: possession of reference + booking email authorises status visibility only - phone and country are stripped from that response; staff and signed-in owners receive the full payload.
 
 ## Public
 
@@ -49,6 +50,8 @@ Sessions: server-managed, HttpOnly, `SameSite=Lax`, absolute 7d, idle 8h (config
 | `POST /admin/payments/:id/requery` | STK query for a pending M-Pesa payment; confirms or fails per Daraja truth; manager/admin |
 | `POST /admin/payments/:id/refund` | Records a manual refund (funds move outside the system); manager/admin |
 | `GET /admin/reports/reconciliation?from&to` | Payment ledger for daily settlement: rows + totals; manager/admin |
+| `GET /admin/reports/payment-health` | M5 **new, manager+** - reconciliation findings: duplicate references, amount mismatches, overpayments, cancelled-with-capture, stale pendings, invoice failures, succeeded-total cross-check |
+| `GET /admin/etims/invoices` | M5 **new, manager+** - eTIMS invoice history (status filter, counts); read-only |
 | `GET /admin/audit-log?entity&page&pageSize` | Append-only audit trail — admin only |
 
 ## Cross-cutting (added M2)

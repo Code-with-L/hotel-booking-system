@@ -32,19 +32,18 @@ export const createApp = () => {
     return apiLimiter(req, res, next);
   });
   app.use(requestLogger);
-  app.use(loadSession);
-
+  // Liveness/readiness probes intentionally bypass session loading (an orchestrator must get an honest answer even when the database or session store is down).
   app.get('/api/v1/health', (_req, res) => res.json({ ok: true, service: 'stillhouse-api', time: new Date().toISOString() }));
-  // Readiness: verifies the database answers before we report ready (used by orchestrators).
   app.get('/api/v1/ready', async (_req, res) => {
     try {
       const { prisma } = await import('./lib/prisma.js');
       await prisma.$queryRaw`SELECT 1`;
       res.json({ ok: true, service: 'stillhouse-api', db: 'up', time: new Date().toISOString() });
-    } catch (err) {
+    } catch (_err) {
       res.status(503).json({ ok: false, service: 'stillhouse-api', db: 'down' });
     }
   });
+  app.use(loadSession);
 
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1', roomsRouter);

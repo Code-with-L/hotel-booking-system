@@ -52,6 +52,15 @@ export async function loadSession(req, _res, next) {
     };
     next();
   } catch (err) {
+    // Database unreachable during a probe/outage: degrade to a truthful 503, never a 500 or a hung request.
+    const msg = String(err?.message || '');
+    if (
+      err?.code === 'P1001' || err?.code === 'P1002' || err?.code === 'P1017'
+      || err?.constructor?.name === 'PrismaClientInitializationError'
+      || /ECONNREFUSED|ECONNRESET|ENOTFOUND|connection (terminated|closed|reset)|can't reach database|Connection terminated/i.test(msg)
+    ) {
+      return next(new ApiError(503, 'SERVICE_UNAVAILABLE', 'The service is temporarily unavailable. Please try again in a moment.'));
+    }
     next(err);
   }
 }

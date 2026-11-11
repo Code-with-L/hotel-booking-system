@@ -10,7 +10,7 @@ import { releaseAllocations } from '../../lib/allocations.js';
 import { audit } from '../../lib/audit.js';
 import { env } from '../../config/env.js';
 import { logger, maskRef } from '../../lib/logger.js';
-import { afterConfirmed } from '../../lib/postBookingEvents.js';
+import { afterConfirmed, afterFailed } from '../../lib/postBookingEvents.js';
 import { stkQuery } from '../../lib/mpesa.js';
 
 export const paymentsRouter = Router();
@@ -105,9 +105,17 @@ webhooksRouter.post('/webhooks/mpesa', async (req, res) => {
     const payment = await prisma.payment.findUnique({ where: { providerReference: checkoutRequestId }, include: { reservation: true } });
     if (!payment) return reply(1, 'Unknown transaction');
 
-    if (payment.status === 'succeeded') return reply(0, 'Accepted (already processed)'); // idempotent replay
+    // Terminal-state idempotency: any terminal payment ignores further callbacks entirely.
+    // A success callback against a settled-failed payment is an anomaly ops must see - log it, never silently flip.
+    if (['succeeded', 'failed', 'refunded', 'partially_refunded'].includes(payment.status)) {
+      if (Number(cb.ResultCode) === 0 && payment.status !== 'succeeded') {
+        logger.error({ reference: maskRef(payment.reservation?.reference), paymentId: payment.id, status: payment.status }, 'mpesa success callback against a settled terminal payment - manual reconciliation required');
+      }
+      return reply(0, `Accepted (already ${payment.status})`);
+    }
 
     let confirmed = false;
+    let failReason = 'payment_failed';
     await prisma.$transaction(async (tx) => {
       await tx.paymentAttempt.create({
         data: {
@@ -131,14 +139,15 @@ webhooksRouter.post('/webhooks/mpesa', async (req, res) => {
         await confirmReservationTx(tx, { reservation: payment.reservation, ip: req.ip, note: 'mpesa webhook' });
         confirmed = true;
       } else {
-        const reason = resultCode === 0 ? 'Amount mismatch' : (cb.ResultDesc || 'Payment failed or cancelled');
-        await tx.payment.update({ where: { id: payment.id }, data: { status: 'failed', failureReason: reason } });
+        failReason = resultCode === 0 ? 'Amount mismatch' : (cb.ResultDesc || 'Payment failed or cancelled');
+        await tx.payment.update({ where: { id: payment.id }, data: { status: 'failed', failureReason: failReason } });
         await releaseAllocations(tx, { sourceType: 'reservation', sourceId: payment.reservationId, state: 'released' });
-        await audit(tx, { action: 'payment.failed', entity: 'payment', entityId: payment.id, after: { reason }, ip: req.ip });
-        logger.warn({ reference: maskRef(payment.reservation?.reference), reason }, 'mpesa callback settled as failed');
+        await audit(tx, { action: 'payment.failed', entity: 'payment', entityId: payment.id, after: { reason: failReason }, ip: req.ip });
+        logger.warn({ reference: maskRef(payment.reservation?.reference), reason: failReason }, 'mpesa callback settled as failed');
       }
     });
     if (confirmed) await afterConfirmed(payment.reservationId);
+    else await afterFailed({ reservationId: payment.reservationId, reason: failReason });
 
     return reply(0, 'Accepted');
   } catch (err) {
@@ -228,6 +237,7 @@ adminPaymentsRouter.post('/admin/payments/:id/requery', requireRole('manager', '
       await releaseAllocations(tx, { sourceType: 'reservation', sourceId: payment.reservationId, state: 'released' });
       await audit(tx, { actorUserId: req.auth.user.id, action: 'payment.requery_failed', entity: 'payment', entityId: payment.id, after: { resultCode: query.resultCode, resultDesc: query.resultDesc }, ip: req.ip });
     });
+    await afterFailed({ reservationId: payment.reservationId, reason: query.resultDesc || `stk_query_${query.resultCode}` });
     return res.json({ outcome: 'failed', resultDesc: query.resultDesc });
   } catch (err) { next(err); }
 });

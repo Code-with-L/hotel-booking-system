@@ -104,13 +104,22 @@ reservationsRouter.get('/reservations/:reference', async (req, res, next) => {
     if (!reservation) throw notFound('Reservation not found.');
     const allowed = canSee(req, reservation) || (email && reservation.guest?.email === email);
     if (!allowed) throw forbidden();
-    res.json(reservationPayload({
+    const payload = reservationPayload({
       reservation,
       guest: reservation.guest,
       roomType: reservation.roomType,
       ratePlan: reservation.ratePlan,
       pricing: { nightlyMinor: reservation.nightlyMinor },
-    }));
+    });
+    // Data minimization: reference+email possession grants status visibility only - strip extra PII
+    // (phone, country) unless the caller is staff or the signed-in owner.
+    const privileged = isStaff(req) || canSee(req, reservation);
+    if (!privileged && payload.guest) {
+      const { phone, country, ...guestMin } = payload.guest;
+      res.json({ ...payload, guest: guestMin });
+    } else {
+      res.json(payload);
+    }
   } catch (err) { next(err); }
 });
 

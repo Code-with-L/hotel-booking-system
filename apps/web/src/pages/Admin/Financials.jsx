@@ -1,18 +1,44 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AdminPageHead, EmptyRow, Panel, Stat, StatusBadge } from "@/features/administration/AdminUI.jsx";
-import { getFinancialSummary } from "@/services/adminService.js";
+import { getFinancialSummary, getPaymentHealth } from "@/services/adminService.js";
 import { formatDate } from "@/utils/dates.js";
 import { formatKsh } from "@/utils/format.js";
 
+const SEVERITY_BADGE = { high: "cancelled", medium: "pending", low: "past" };
 const PaymentBadge = ({ status }) => {
   const cls = status === "succeeded" ? "confirmed" : status === "pending" ? "pending" : "cancelled";
   const label = status === "succeeded" ? "Succeeded" : status === "pending" ? "Pending" : status;
   return <span className={`badge badge--${cls}`}>{label}</span>;
 };
+const HealthFindings = ({ health }) => (
+  <Panel title="Payment health" className="span-2">
+    {health === undefined && <p className="small" aria-live="polite">Loading reconciliation findings…</p>}
+    {health === null && <p className="small">Reconciliation findings are unavailable (you may lack manager permissions or the service errored).</p>}
+    {health && health.healthy && health.findings.length === 0 && (
+      <p className="small">Reconciliation is clean: no anomalies found across payments, attempts, refunds, invoices and totals.</p>
+    )}
+    {health && health.findings.length > 0 && (
+      <ul className="history health-list">
+        {health.findings.map((f) => (
+          <li key={f.id}>
+            <span className={`badge badge--${SEVERITY_BADGE[f.severity] || "past"}`}>{f.severity.toUpperCase()}</span>
+            <strong>{f.label}</strong>
+            <span className="small">{f.count} · {f.action}</span>
+            {f.samples && f.samples.length > 0 && (
+              <span className="small">{f.samples.map((s, i) => <code key={i} className="health-sample">{s.reference || s.id || JSON.stringify(s)}</code>)}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    )}
+    {health && <p className="small">Succeeded totals — payments KSh {(health.totals.succeededMinor / 100).toLocaleString("en-KE")} · attempts KSh {(health.totals.attemptsSucceededMinor / 100).toLocaleString("en-KE")} · refunds KSh {(health.totals.refundsMinor / 100).toLocaleString("en-KE")}. Findings are informational; correct records through the existing flows (desk settlement, requery, refunds) — never by editing the ledger directly.</p>}
+  </Panel>
+);
 
 export default function Financials() {
   const [fin, setFin] = useState(null);
+  const [health, setHealth] = useState(undefined); // undefined loading, null failed, object ready
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -20,6 +46,9 @@ export default function Financials() {
     getFinancialSummary()
       .then((d) => on && setFin(d))
       .catch((e) => on && setError(e.message || "Could not load financial summary."));
+    getPaymentHealth()
+      .then((d) => on && setHealth(d))
+      .catch(() => on && setHealth(null));
     return () => { on = false; };
   }, []);
 
@@ -89,6 +118,8 @@ export default function Financials() {
             </table>
           </div>
         </Panel>
+
+        <HealthFindings health={health} />
       </div>
 
       <p className="small">

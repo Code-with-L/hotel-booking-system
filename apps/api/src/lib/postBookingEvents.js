@@ -3,7 +3,7 @@
 // failures are logged and recorded (outbox / tax_invoice rows), never rolled back into booking state.
 import { prisma } from './prisma.js';
 import { logger } from './logger.js';
-import { sendBookingConfirmation, sendAdminNewBooking, sendPaymentReceived, sendBookingCancelled } from '../integrations/email/index.js';
+import { sendBookingConfirmation, sendAdminNewBooking, sendPaymentReceived, sendBookingCancelled, sendPaymentFailed, sendArrivalReminder } from '../integrations/email/index.js';
 import { issueTaxInvoiceSafe } from '../integrations/etims/index.js';
 
 const withRelations = (reservationId) =>
@@ -39,5 +39,25 @@ export async function afterCancelled({ reservationId, cancelFeeMinor }) {
     await sendBookingCancelled({ guest: reservation.guest, reservation, cancelFeeMinor });
   } catch (err) {
     logger.error({ err: String(err?.message || err), reservationId }, 'post-cancel event failure');
+  }
+}
+
+export async function afterFailed({ reservationId, reason }) {
+  try {
+    const reservation = await withRelations(reservationId);
+    if (!reservation) return;
+    await sendPaymentFailed({ guest: reservation.guest, reservation, reason });
+  } catch (err) {
+    logger.error({ err: String(err?.message || err), reservationId }, 'post-failure notification failure');
+  }
+}
+
+export async function sendArrivalReminders({ reservations }) {
+  for (const reservation of reservations) {
+    try {
+      await sendArrivalReminder({ guest: reservation.guest, reservation, room: reservation.roomType });
+    } catch (err) {
+      logger.error({ err: String(err?.message || err), reservationId: reservation.id }, 'arrival reminder failure');
+    }
   }
 }

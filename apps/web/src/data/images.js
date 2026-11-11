@@ -9,7 +9,7 @@ const HOST = "https://images.pexels.com/photos";
 export const photoUrl = (photo, width = 1600) =>
   `${HOST}/${photo.id}/pexels-photo-${photo.id}.jpeg?auto=compress&cs=tinysrgb&w=${width}`;
 
-export const photoSrcSet = (photo, widths = [640, 1024, 1600, 2200]) =>
+export const photoSrcSet = (photo, widths = [480, 640, 1024, 1600, 2200]) =>
   widths.map((w) => `${photoUrl(photo, w)} ${w}w`).join(", ");
 
 const p = (id, alt) => ({ id, alt });
