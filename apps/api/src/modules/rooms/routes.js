@@ -4,7 +4,7 @@ import { prisma } from '../../lib/prisma.js';
 import { availabilityQuerySchema, quoteRequestSchema } from '@stillhouse/shared';
 import { validate } from '../../middleware/index.js';
 import { computeStayPricing, nightsBetween, toDateOnly } from '../../lib/pricing.js';
-import { findFreeRooms } from '../../lib/allocations.js';
+
 import { badRequest } from '../../lib/errors.js';
 
 export const roomsRouter = Router();
@@ -57,13 +57,39 @@ availabilityRouter.get('/availability', validate(availabilityQuerySchema, 'query
       orderBy: { slug: 'asc' },
     });
 
+    // Aggregate counts: one query for ALL room types (replaces per-type availability scans)
+    const co = checkOut; const ci = checkIn;
+    const freeRows = await prisma.$queryRawUnsafe(
+      `SELECT t.id AS room_type_id,
+              count(*)::int AS total_active,
+              count(*) FILTER (WHERE NOT EXISTS (
+                SELECT 1 FROM room_allocation ra
+                WHERE ra.room_id = r.id AND ra.state = 'occupying'
+                  AND ra.check_in < $1::date AND ra.check_out > $2::date
+              ))::int AS free_units
+       FROM room r JOIN room_type t ON t.id = r."roomTypeId"
+       WHERE r.status = 'active'
+       GROUP BY t.id`,
+      co, ci,
+    );
+    const freeByType = new Map(freeRows.map((row) => [Number(row.room_type_id), Number(row.free_units)]));
+
+    // Prefetch every rate card covering the window (one query for all types and plans)
+    const typeIds = types.map((t) => t.id);
+    const planIds = types.flatMap((t) => t.ratePlans.map((p) => p.id));
+    const allCards = await prisma.rateCard.findMany({
+      where: {
+        roomTypeId: { in: typeIds },
+        ratePlanId: { in: planIds },
+        validFrom: { lte: toDateOnly(checkOut) },
+        validTo: { gte: toDateOnly(checkIn) },
+        status: { in: ['active', 'scheduled'] },
+      },
+    });
+
     const results = await Promise.all(types.map(async (type) => {
       const capacityOk = adults <= type.maxAdults * rooms && children <= type.maxChildren * rooms;
-      let freeUnits = 0;
-      if (capacityOk) {
-        const free = await findFreeRooms(prisma, { roomTypeId: type.id, checkIn: checkInDate, checkOut: checkOutDate, count: rooms });
-        freeUnits = free.length;
-      }
+      const freeUnits = capacityOk ? (freeByType.get(type.id) ?? 0) : 0;
       const available = capacityOk && freeUnits >= rooms;
       let reason = '';
       if (!capacityOk) {
@@ -74,7 +100,7 @@ availabilityRouter.get('/availability', validate(availabilityQuerySchema, 'query
         reason = 'Not enough rooms of this type free for these dates.';
       }
       const plans = await Promise.all(type.ratePlans.map(async (plan) => {
-        const pricing = await computeStayPricing(prisma, { roomType: type, ratePlan: plan, checkIn, checkOut, rooms });
+        const pricing = await computeStayPricing(prisma, { roomType: type, ratePlan: plan, checkIn, checkOut, rooms }, allCards);
         return {
           ratePlanKey: plan.key,
           name: plan.name,

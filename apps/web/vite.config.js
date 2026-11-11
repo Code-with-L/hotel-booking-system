@@ -15,4 +15,15 @@ export default defineConfig({
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   server: { port: 5173, proxy },
   preview: { port: 4173, proxy },
+  build: {
+    // Split stable vendor code from app code for better caching/loading (build-time only, no design change)
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          gsap: ["gsap"],
+        },
+      },
+    },
+  },
 });

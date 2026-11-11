@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
+    "autocannon": "^8.0.0",
     "prisma": "^6.19.3",
     "vitest": "^5.1.0"
   },

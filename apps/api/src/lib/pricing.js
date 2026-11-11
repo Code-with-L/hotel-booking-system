@@ -16,42 +16,40 @@ export const addDaysISO = (iso, n) => {
   return d.toISOString().slice(0, 10);
 };
 
-async function resolveNightlyForDate(prisma, { roomTypeId, rateCardFallback, ratePlanId }, date, cache) {
-  const key = `${roomTypeId}|${ratePlanId}|${date.toISOString().slice(0, 10)}`;
-  if (cache?.has(key)) return cache.get(key);
-  let nightly = null;
-  try {
-    const card = await prisma.rateCard.findFirst({
-      where: {
-        roomTypeId,
-        ratePlanId,
-        validFrom: { lte: date },
-        validTo: { gte: date },
-        status: { in: ['active', 'scheduled'] },
-      },
-      orderBy: { validFrom: 'desc' },
-    });
-    if (card) nightly = card.nightlyMinor;
-  } catch {
-    nightly = null;
-  }
-  if (nightly == null) nightly = hundred(roundHalfUp(rateCardFallback));
-  cache?.set(key, nightly);
-  return nightly;
-}
-
-export async function computeStayPricing(prisma, { roomType, ratePlan, checkIn, checkOut, rooms }) {
+export async function computeStayPricing(prisma, { roomType, ratePlan, checkIn, checkOut, rooms }, prefetchedCards = null) {
   const nights = nightsBetween(checkIn, checkOut);
-  const cache = new Map();
+  const from = toDateOnly(checkIn);
+  const to = toDateOnly(checkOut);
+  let cards = prefetchedCards;
+  if (!cards) {
+    try {
+      cards = await prisma.rateCard.findMany({
+        where: {
+          roomTypeId: roomType.id,
+          ratePlanId: ratePlan.id,
+          validFrom: { lte: to },
+          validTo: { gte: from },
+          status: { in: ['active', 'scheduled'] },
+        },
+        orderBy: { validFrom: 'desc' },
+      });
+    } catch {
+      cards = [];
+    }
+  } else {
+    cards = cards
+      .filter((c) => c.roomTypeId === roomType.id && c.ratePlanId === ratePlan.id)
+      .sort((a, b) => b.validFrom - a.validFrom);
+  }
+  const cardFor = (date) => cards.find((c) => c.validFrom <= date && c.validTo >= date) || null;
+  const rateCardFallback = roomType.fromPriceMinor * ratePlan.multiplier;
+
   const nightlyRates = [];
   for (let i = 0; i < nights; i += 1) {
     const dateISO = addDaysISO(checkIn, i);
     const date = toDateOnly(dateISO);
-    nightlyRates.push(await resolveNightlyForDate(prisma, {
-      roomTypeId: roomType.id,
-      rateCardFallback: roomType.fromPriceMinor * ratePlan.multiplier,
-      ratePlanId: ratePlan.id,
-    }, date, cache));
+    const card = cardFor(date);
+    nightlyRates.push(card ? card.nightlyMinor : hundred(roundHalfUp(rateCardFallback)));
   }
   const roomSubtotal = nightlyRates.reduce((sum, n) => sum + n, 0);
   const subtotalMinor = roomSubtotal * rooms;
