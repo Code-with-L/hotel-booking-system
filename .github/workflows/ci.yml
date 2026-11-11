@@ -68,6 +68,8 @@ jobs:
 
       - name: Prisma schema validate
         run: npx prisma validate
+        env:
+          DATABASE_URL: postgresql://stillhouse:stillhouse_ci_password@localhost:5432/postgres
 
       - name: API tests (real PostgreSQL 16)
         run: npm test --workspace=@stillhouse/api
