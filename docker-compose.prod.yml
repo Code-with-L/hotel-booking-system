@@ -1,0 +1,89 @@
+# The Stillhouse — PRODUCTION reference stack (app + web + postgres).
+# This is a reference, not a requirement: managed Postgres (Neon/RDS/Supabase) and
+# container hosting (Fly/Railway/Render/VPS) work identically. See docs/DEPLOYMENT.md.
+# NEVER commit real .env; inject secrets via your platform's secret store.
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - stillhouse_db_data:/var/lib/postgresql/data
+    networks:
+      - internal
+
+  migrate:
+    image: hotel-booking-system-api:latest
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: npx prisma migrate deploy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
+    depends_on:
+      - db
+    networks:
+      - internal
+    restart: "no"
+
+  api:
+    image: hotel-booking-system-api:latest
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
+      SESSION_SECRET: ${SESSION_SECRET}
+      COOKIE_SECURE: "true"
+      WEB_ORIGIN: https://book.example.com
+      FRONTEND_BASE_URL: https://book.example.com
+      TRUST_PROXY: "1"
+      MPESA_ENV: ${MPESA_ENV:-disabled}
+      MPESA_CONSUMER_KEY: ${MPESA_CONSUMER_KEY:-}
+      MPESA_CONSUMER_SECRET: ${MPESA_CONSUMER_SECRET:-}
+      MPESA_SHORTCODE: ${MPESA_SHORTCODE:-}
+      MPESA_PASSKEY: ${MPESA_PASSKEY:-}
+      MPESA_CALLBACK_URL: ${MPESA_CALLBACK_URL:-}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-}
+      EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST:-}
+      EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT:-587}
+      EMAIL_SMTP_USER: ${EMAIL_SMTP_USER:-}
+      EMAIL_SMTP_PASS: ${EMAIL_SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      ADMIN_NOTIFICATION_EMAIL: ${ADMIN_NOTIFICATION_EMAIL:-}
+      ETIMS_ENVIRONMENT: ${ETIMS_ENVIRONMENT:-disabled}
+      ETIMS_TIN: ${ETIMS_TIN:-}
+      ETIMS_BASE_URL: ${ETIMS_BASE_URL:-}
+      ETIMS_COMMUNICATION_KEY: ${ETIMS_COMMUNICATION_KEY:-}
+      ETIMS_DEVICE_SERIAL: ${ETIMS_DEVICE_SERIAL:-}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - internal
+
+  web:
+    image: hotel-booking-system-web:latest
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8080:8080"   # put TLS termination (proxy/CDN) in front; do not expose raw
+    networks:
+      - internal
+
+volumes:
+  stillhouse_db_data:
+
+networks:
+  internal:
+    driver: bridge

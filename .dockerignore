@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+dist
+**/dist
+.git
+coverage
+test-results
+*.log
+.env
+.env.*
+!.env.example
+arena-staging
