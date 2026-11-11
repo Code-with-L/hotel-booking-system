@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { NAV_LINKS } from "@/data/site.js";
@@ -14,9 +14,23 @@ export default function Header() {
   const overlay = isOverlayRoute(pathname);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuTriggerRef = useRef(null);
+  const wasMenuOpen = useRef(false);
 
   useEffect(() => watchNavScroll(setScrolled), []);
   useEffect(() => setMenuOpen(false), [pathname]);
+
+  // Return focus to the trigger button when the menu closes (not on mount)
+  useEffect(() => {
+    if (menuOpen) {
+      wasMenuOpen.current = true;
+      return;
+    }
+    if (wasMenuOpen.current) {
+      menuTriggerRef.current?.focus();
+      wasMenuOpen.current = false;
+    }
+  }, [menuOpen]);
 
   const solid = !overlay || scrolled;
 
@@ -46,6 +60,7 @@ export default function Header() {
           </div>
 
           <button
+            ref={menuTriggerRef}
             className="menu-trigger"
             onClick={() => setMenuOpen(true)}
             aria-label="Open menu"

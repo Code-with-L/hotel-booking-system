@@ -1,20 +1,26 @@
 /** Navigation motion: solid-on-scroll toggle and the full-screen menu overlay. */
-import { gsap, ScrollTrigger, prefersReducedMotion } from "./gsap.js";
+import { gsap, prefersReducedMotion } from "./gsap.js";
+
+const SOLID_OFFSET = 40;
 
 /** Calls onChange(true|false) as the page passes `offset` px. Returns cleanup. */
-export function watchNavScroll(onChange, offset = 40) {
-  onChange(window.scrollY > offset);
-  const st = ScrollTrigger.create({
-    start: offset,
-    end: "max",
-    onToggle: (self) => onChange(self.isActive || window.scrollY > offset),
-    onRefresh: () => onChange(window.scrollY > offset),
-  });
-  const onScroll = () => onChange(window.scrollY > offset);
+export function watchNavScroll(onChange, offset = SOLID_OFFSET) {
+  let ticking = false;
+  const update = () => onChange(window.scrollY > offset);
+  update();
+  const onScroll = () => {
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(() => {
+      update();
+      ticking = false;
+    });
+  };
   window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
   return () => {
-    st.kill();
     window.removeEventListener("scroll", onScroll);
+    window.removeEventListener("resize", onScroll);
   };
 }
 

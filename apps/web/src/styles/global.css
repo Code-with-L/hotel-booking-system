@@ -169,7 +169,10 @@ table {
   cursor: pointer;
   white-space: nowrap;
   transition: background-color var(--t-base) var(--ease), color var(--t-base) var(--ease),
-    border-color var(--t-base) var(--ease);
+    border-color var(--t-base) var(--ease), transform var(--t-base) var(--ease);
+}
+.btn:not(:disabled):active {
+  transform: translateY(1px) scale(0.99);
 }
 .btn svg {
   transition: transform var(--t-base) var(--ease);
@@ -803,4 +806,33 @@ a:hover > .media--zoom img {
 }
 .dialog__done .body {
   margin: 16px 0 28px;
+}
+
+/* ---------- Print: confirmation page prints a clean summary only ---------- */
+@media print {
+  .skip-link, .site-header, .footer, .booking-steps, .confirmation__grid img, .confirmation__detail .form-actions, .confirmation__detail .small:last-of-type {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .page-top {
+    padding: 0;
+  }
+  .confirmation__grid {
+    display: block;
+  }
+  .confirmation__ref {
+    display: block;
+    padding: 0;
+    margin-bottom: 24px;
+  }
+  .numeral {
+    font-size: 42px;
+  }
+  a {
+    color: #000;
+    text-decoration: none;
+  }
 }

@@ -40,6 +40,8 @@ Starting state after `npm run db:seed`: **demo fixtures are clearly fake** (exam
 | `docs/ARCHITECTURE.md` | Modular monolith; workspaces; the `src/services/*` seam; API rules |
 | `docs/DESIGN_SYSTEM.md` | Tokens, typography, components, motion — canonical visual truth |
 | `docs/FRONTEND_MAP.md` | Route map the Arena frontend must implement |
+| `docs/M3_VISUAL_REVIEW.md` | M3 experience refinements + verification evidence |
+| `docs/M3_PHOTOGRAPHY_BRIEF.md` | Shot list for the commissioned photography |
 | `docs/DEPLOYMENT.md` | Production architecture, release & rollback, monitoring |
 | `docs/OPERATIONS.md` | Daily staff runbook: arrivals, settlement, refunds, blocks, rates |
 | `docs/BACKUP_RESTORE.md` | Backup cadence + performed restore drill (evidence) |
