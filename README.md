@@ -2,7 +2,7 @@
 
 A fictional 28-room boutique luxury retreat above the Great Rift Valley, Naivasha, Kenya — a working reservation platform: public website, booking engine, M-Pesa-ready payments, guest accounts and an operating dashboard.
 
-**Status: M2 complete — production-ready build, owner-gated activation items remain (M2-A/B/C credentials). See `docs/BUILD_PLAN.md` and `docs/ACTIVATE_*.md`.**
+**Status: M4 complete - operations-ready build (31 API tests, 3 e2e). Owner-gated activation items remain (M-Pesa/eTIMS/tax credentials). See `docs/BUILD_PLAN.md`, `docs/reports/M4.md` and `docs/ACTIVATE_*.md`.**
 
 ## Run it
 
@@ -23,7 +23,7 @@ npm run dev:api        # http://localhost:4000/api/v1
 npm run dev:web        # http://localhost:5173 (proxying /api)
 
 # 4. Verify
-npm test --workspace=@stillhouse/api     # 20 API tests (real PostgreSQL, race-condition, Daraja mock suite)
+npm test --workspace=@stillhouse/api     # 31 API tests (real PostgreSQL, race-condition, RBAC, audit, Daraja mock suite)
 npx playwright test                      # 3 e2e journeys (guest books → staff confirms → guest sees it)
 npm run build --workspace=@stillhouse/web
 ```

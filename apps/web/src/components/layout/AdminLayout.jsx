@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { BedDouble, CalendarDays, ChartColumn, LayoutDashboard, Settings, Tag, Users } from "lucide-react";
+import { BedDouble, CalendarDays, ChartColumn, LayoutDashboard, Settings, Tag, Users, Banknote } from "lucide-react";
 import { formatDateLong, todayISO } from "@/utils/dates.js";
 import { useAuth } from "@/features/guest-account/AuthContext.jsx";
 import { TextField } from "@/components/forms/Fields.jsx";
@@ -13,6 +13,7 @@ const ITEMS = [
   { to: "/admin/guests", label: "Guests", icon: Users },
   { to: "/admin/rates", label: "Rates", icon: Tag },
   { to: "/admin/reports", label: "Reports", icon: ChartColumn },
+  { to: "/admin/financials", label: "Financials", icon: Banknote },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

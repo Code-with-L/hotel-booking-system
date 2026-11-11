@@ -8,6 +8,10 @@ const statusToRaw = (label) =>
   String(label).trim().toLowerCase().replace(/[-\s]+/g, "_");
 
 export const getDashboard = () => request("/admin/dashboard");
+export const getRoomHistory = (number) => request(`/admin/rooms/${encodeURIComponent(number)}/history`);
+export const updateGuestNotes = (guestId, notes) => request(`/admin/guests/${encodeURIComponent(guestId)}`, { method: "PATCH", body: { notes } });
+export const getFinancialSummary = () => request("/admin/reports/financial-summary");
+export const getReservationDetail = (reference) => request(`/admin/reservations/${encodeURIComponent(reference)}`);
 
 export async function getReservations() {
   const data = await request("/admin/reservations?pageSize=100");

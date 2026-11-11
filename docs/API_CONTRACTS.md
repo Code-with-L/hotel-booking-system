@@ -32,13 +32,15 @@ Sessions: server-managed, HttpOnly, `SameSite=Lax`, absolute 7d, idle 8h (config
 ## Staff (RBAC: receptionist < manager < admin)
 | Path | Notes |
 |---|---|
-| `GET /admin/dashboard` | KPIs; arrivals/departures today; occupancy; revenue (minor→KES at edge); recent; availability by type |
-| `GET /admin/reservations?q&status&roomType&page&pageSize` | `{ total, rows: [toListItem] }` |
-| `GET /admin/reservations/:reference` | Detail + payments |
-| `PATCH /admin/reservations/:reference` | `{ status: confirmed\|checked_in\|checked_out\|cancelled, reason? }` — valid transitions only; cancellation releases allocations; audit-logged |
-| `GET /admin/rooms` | 28 units with live status (out_of_service ⇒ "Out of service", allocations today ⇒ "Occupied", else "Vacant clean") |
-| `PATCH /admin/rooms/:number` | `{ status: active\|out_of_service, notes? }` — taking out of service creates a dated maintenance block + confined allocation; returning to service releases its future blocks |
-| `GET /admin/guests?q` / `GET /admin/guests/:id` | Records + embedded reservation history |
+| `GET /admin/dashboard` | KPIs; arrivals/departures today; occupancy; revenue; recent; availability by type; pending/confirmed counts; cancellations (30d); payment summary (succeeded/pending/failed); outstanding balance |
+| `GET /admin/reservations?q&status&roomType&page&pageSize` | `{ total, rows: [toListItem + paymentStatus, totalPaidMinor, cancelFeeMinor] }` |
+| `GET /admin/reservations/:reference` | Detail incl. itemised `breakdown{.}` (nightly, subtotal, SC/levy/VAT, total, cancel fee) and `payments[]` |
+| `PATCH /admin/reservations/:reference` | `{ status: confirmed|checked_in|checked_out|cancelled, reason? }` - valid transitions only; compare-and-swap (concurrent modifier gets 409); cancellation releases allocations; audit-logged |
+| `GET /admin/rooms` | 28 units with live status (out_of_service ? "Out of service", allocations today ? "Occupied", else "Vacant clean") |
+| `PATCH /admin/rooms/:number` | `{ status: active|out_of_service, notes? }` - M4 **hard guard**: `out_of_service` rejected with 409 (blocking reservation references listed) while an occupying hold/reservation overlaps the next 365 days; no override |
+| `GET /admin/rooms/:number/history` | M4 **new** - allocation ledger for the unit (dates, kind, state, source reservation + guest) |
+| `PATCH /admin/guests/:id` | M4 **new** - operational notes (`notes`, <800 chars), audit-written (`guest.notes_updated`) |
+| `GET /admin/reports/financial-summary` | M4 **new, manager+** - collected/pending/failed payments, refunds, cancellation fees, outstanding balances, recent payments |
 | `GET /admin/rates` / `PATCH /admin/rates/:id` | Seasonal rate cards (`nightlyMinor` or status `active\|scheduled\|inactive`) — manager/admin only |
 | `GET /admin/reports/occupancy?days` | Daily occupancy % derived from allocations |
 | `GET /admin/reports/monthly?months` | Reservations + revenue (KSh) by month and room type |

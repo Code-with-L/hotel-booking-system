@@ -8,7 +8,10 @@ For front-desk, management and the owner. No code required for daily operation.
 2. **Arrivals** — find the guest on **Reservations** (search by name/reference/email). Verify ID/payment. Mark **Checked-in** in the status drawer (validated transitions only: Confirmed → Checked-in → Checked-out).
 3. **Desk payment** — if the guest pays at the desk (cash/card/bank transfer), use the payment recording action (manager/admin or receptionist with the desk flow). It requires the **full balance** and confirms the reservation automatically.
 4. **Check-out** — Reservations → open guest → **Checked-out**.
-5. **Maintenance** — Rooms → take room out of service with a note (creates a dated maintenance block; the room immediately disappears from sale). When fixed, set back to **Vacant clean** (future blocks are released automatically).
+4a. **Operational notes** - Guests -> open dossier -> "Operational notes" (max 800 chars). Saved notes are written to the guest record and audit-logged (`guest.notes_updated`).
+4b. **Room history** - Rooms -> **History** on any unit: allocation ledger rows (dates, kind, state) with Completed/In effect labels.
+4c. **Financials** - Operations -> **Financials** (manager+): collected / outstanding / refunds / cancellation fees / pending value, outstanding-balances table and recent payments. Figures come from recorded payments only; desk settlements count immediately.
+5. **Maintenance** - Rooms -> take room out of service with a note (creates a dated maintenance block; the room immediately disappears from sale). When fixed, set back to **Vacant clean** (future blocks are released automatically).
 
 ## Payment reconciliation (daily, 5 minutes)
 

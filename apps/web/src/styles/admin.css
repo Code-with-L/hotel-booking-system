@@ -114,8 +114,8 @@
 }
 .stat__value {
   font-family: var(--font-display);
-  font-size: clamp(30px, 2.6vw, 40px);
-  line-height: 1.05;
+  font-size: clamp(24px, 2vw, 30px);
+  line-height: 1.1;
   overflow-wrap: anywhere;
 }
 
@@ -336,6 +336,9 @@
   flex-direction: column;
   gap: 20px;
 }
+.drawer--wide {
+  width: min(720px, 100%);
+}
 .drawer__head {
   display: flex;
   justify-content: space-between;
@@ -400,4 +403,23 @@
   font-size: 14px;
   min-height: 42px;
   padding: 10px 12px;
+}
+
+.notes-editor {
+  margin-top: var(--s-4);
+}
+.notes-editor textarea {
+  width: 100%;
+  background: var(--white);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 72px;
+}
+.notes-editor textarea:focus {
+  outline: none;
+  border-color: var(--olive);
 }

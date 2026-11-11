@@ -1,12 +1,16 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { AdminPageHead, EmptyRow, SearchInput, StatusBadge, Toolbar } from "@/features/administration/AdminUI.jsx";
-import { getGuests } from "@/services/adminService.js";
+import { getGuests, updateGuestNotes } from "@/services/adminService.js";
 import { formatDate } from "@/utils/dates.js";
 import { formatKsh } from "@/utils/format.js";
+import Button from "@/components/ui/Button.jsx";
 
 export default function Guests() {
   const [guests, setGuests] = useState(null);
   const [loadError, setLoadError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [savedNoteFor, setSavedNoteFor] = useState(null);
+  const [notesDraft, setNotesDraft] = useState({});
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState(null);
 
@@ -17,6 +21,19 @@ export default function Guests() {
       .catch((e) => on && setLoadError(e.message || "Could not load guests."));
     return () => { on = false; };
   }, []);
+
+  const saveNotes = async (g) => {
+    const draft = notesDraft[g.id] ?? g.notes;
+    setActionError("");
+    try {
+      await updateGuestNotes(g.id, draft);
+      setGuests((gs) => gs.map((x) => (x.id === g.id ? { ...x, notes: draft } : x)));
+      setSavedNoteFor(g.id);
+      window.setTimeout(() => setSavedNoteFor(null), 2500);
+    } catch (err) {
+      setActionError(err.message || "Could not save notes.");
+    }
+  };
 
   const filtered = useMemo(() => {
     if (!guests) return [];
@@ -31,6 +48,7 @@ export default function Guests() {
         <SearchInput value={q} onChange={setQ} placeholder="Search name, email, country." label="Search guests" />
       </Toolbar>
       {loadError && <p className="form-alert" role="alert">{loadError}</p>}
+      {actionError && <p className="form-alert" role="alert">{actionError}</p>}
       <div className="table-wrap">
         <table className="table table--admin">
           <thead>
@@ -58,7 +76,6 @@ export default function Guests() {
                   {open && (
                     <tr className="expand">
                       <td colSpan={6}>
-                        {g.notes && <p className="small"><strong>Notes:</strong> {g.notes}</p>}
                         {history.length === 0 ? (
                           <p className="small">No reservations on record.</p>
                         ) : (
@@ -74,6 +91,21 @@ export default function Guests() {
                             ))}
                           </ul>
                         )}
+                        <div className="notes-editor">
+                          <label htmlFor={`notes-${g.id}`} className="meta">Operational notes</label>
+                          <textarea
+                            id={`notes-${g.id}`}
+                            rows={3}
+                            maxLength={800}
+                            value={notesDraft[g.id] ?? g.notes}
+                            onChange={(e) => setNotesDraft((d) => ({ ...d, [g.id]: e.target.value }))}
+                            placeholder="Preferences, allergies, accessibility needs, staff remarks…"
+                          />
+                          <div className="form-actions" style={{ marginTop: "var(--s-3)" }}>
+                            <Button variant="outline" size="sm" onClick={() => saveNotes(g)}>Save notes</Button>
+                            {savedNoteFor === g.id && <p className="small" role="status">Saved.</p>}
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   )}

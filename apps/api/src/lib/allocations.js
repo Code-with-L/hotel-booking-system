@@ -12,6 +12,14 @@ export async function findFreeRooms(tx, { roomTypeId, checkIn, checkOut, count }
   });
   if (rooms.length === 0) return [];
   const idList = rooms.map((r) => String(r.id)).join(',');
+  // Serialize competing allocations on this room set: lock candidate rows in ascending id
+  // order so concurrent transactions observe each other's committed holds instead of racing
+  // uncommitted speculation (which can exhaust retries and spuriously strand a room).
+  // Lock order is identical in every transaction, so this cannot deadlock itself.
+  await tx.$queryRawUnsafe(
+    `SELECT id FROM room WHERE id = ANY($1::bigint[]) ORDER BY id FOR UPDATE`,
+    `{${idList}}`,
+  );
   const ci = (checkIn instanceof Date ? checkIn.toISOString() : String(checkIn)).slice(0, 10);
   const co = (checkOut instanceof Date ? checkOut.toISOString() : String(checkOut)).slice(0, 10);
   const blocked = await tx.$queryRawUnsafe(

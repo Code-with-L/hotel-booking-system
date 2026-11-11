@@ -16,30 +16,40 @@ export const accountRouter = Router();
 
 const STATUS_LABEL = { pending: 'Pending', confirmed: 'Confirmed', checked_in: 'Checked-in', checked_out: 'Checked-out', cancelled: 'Cancelled', expired: 'Expired' };
 
-export const toListItem = (r, roomNumbers = []) => ({
-  id: r.reference, // client-side identifier used across admin pages
-  reference: r.reference,
-  roomName: r.roomType?.name,
-  roomSlug: r.roomType?.slug,
-  roomNumbers,
-  ratePlanId: r.ratePlan?.key,
-  arrival: r.checkIn.toISOString().slice(0, 10),
-  departure: r.checkOut.toISOString().slice(0, 10),
-  nights: r.nights,
-  adults: r.adults,
-  children: r.children,
-  rooms: r.rooms,
-  totalMinor: r.totalMinor,
-  total: Math.round(r.totalMinor / 100),
-  currency: r.currency,
-  status: STATUS_LABEL[r.status] || r.status,
-  statusRaw: r.status,
-  requests: r.specialRequests || '',
-  createdAt: r.createdAt.toISOString(),
-  guestName: r.guest ? `${r.guest.firstName} ${r.guest.lastName}`.trim() : undefined,
-  guestEmail: r.guest?.email,
-  guestPhone: r.guest?.phone,
-});
+export const toListItem = (r, roomNumbers = [], paidMinor = null) => {
+  const totalPaid = paidMinor == null ? null : paidMinor;
+  const paymentStatus = totalPaid == null ? undefined
+    : totalPaid >= r.totalMinor ? 'Paid'
+    : totalPaid > 0 ? 'Partial'
+    : 'Unpaid';
+  return {
+    id: r.reference, // client-side identifier used across admin pages
+    reference: r.reference,
+    roomName: r.roomType?.name,
+    roomSlug: r.roomType?.slug,
+    roomNumbers,
+    ratePlanId: r.ratePlan?.key,
+    arrival: r.checkIn.toISOString().slice(0, 10),
+    departure: r.checkOut.toISOString().slice(0, 10),
+    nights: r.nights,
+    adults: r.adults,
+    children: r.children,
+    rooms: r.rooms,
+    totalMinor: r.totalMinor,
+    total: Math.round(r.totalMinor / 100),
+    currency: r.currency,
+    totalPaidMinor: totalPaid ?? undefined,
+    paymentStatus,
+    status: STATUS_LABEL[r.status] || r.status,
+    statusRaw: r.status,
+    cancelFeeMinor: r.cancelFeeMinor ?? undefined,
+    requests: r.specialRequests || '',
+    createdAt: r.createdAt.toISOString(),
+    guestName: r.guest ? `${r.guest.firstName} ${r.guest.lastName}`.trim() : undefined,
+    guestEmail: r.guest?.email,
+    guestPhone: r.guest?.phone,
+  };
+};
 
 reservationsRouter.post('/reservations', validate(createReservationSchema), async (req, res, next) => {
   try {

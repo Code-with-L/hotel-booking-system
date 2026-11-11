@@ -40,6 +40,7 @@ export const routes = [
       { path: "guests", ...page(() => import("@/pages/Admin/Guests.jsx")) },
       { path: "rates", ...page(() => import("@/pages/Admin/Rates.jsx")) },
       { path: "reports", ...page(() => import("@/pages/Admin/Reports.jsx")) },
+      { path: "financials", ...page(() => import("@/pages/Admin/Financials.jsx")) },
       { path: "settings", ...page(() => import("@/pages/Admin/Settings.jsx")) },
     ],
   },

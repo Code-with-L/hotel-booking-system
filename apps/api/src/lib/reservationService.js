@@ -22,11 +22,18 @@ export async function createReservationTx(args) {
   // fired against another guest's committed room), the inner tx rolls back fully and we retry
   // with a fresh candidate set - PostgreSQL cannot continue inside an aborted transaction.
   let lastErr;
-  for (let attempt = 0; attempt < 5; attempt += 1) {
+  for (let attempt = 0; attempt < 6; attempt += 1) {
     try {
       return await innerCreateReservation(args);
     } catch (err) {
-      if (err?.code === 'ROOM_UNAVAILABLE') { lastErr = err; continue; }
+      if (err?.code === 'ROOM_UNAVAILABLE') {
+        lastErr = err;
+        // Back off briefly so the next candidate set reflects what competing in-flight
+        // transactions committed (READ COMMITTED only sees committed rows). Without this,
+        // an unlucky retry can repeatedly lose to uncommitted speculation holds.
+        await new Promise((resolve) => setTimeout(resolve, 40 * (attempt + 1) + Math.floor(Math.random() * 60)));
+        continue;
+      }
       throw err;
     }
   }

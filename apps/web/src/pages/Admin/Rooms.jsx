@@ -1,15 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
+import { X } from "lucide-react";
 import { AdminPageHead, EmptyRow, FilterSelect, Panel, SearchInput, StatusBadge, Toolbar } from "@/features/administration/AdminUI.jsx";
-import { getUnits, updateUnit } from "@/services/adminService.js";
+import { getUnits, getRoomHistory, updateUnit } from "@/services/adminService.js";
 import { ROOMS } from "@/data/rooms.js";
+import { formatDate, todayISO } from "@/utils/dates.js";
 import { formatKsh } from "@/utils/format.js";
 
 const ROOM_STATUSES = ["Vacant clean", "Occupied", "Out of service"];
+const ALLOCATION_BADGE = {
+  released: { cls: "past", label: "Released" },
+  expired: { cls: "cancelled", label: "Expired" },
+};
+const allocationBadge = (h) =>
+  h.state !== "occupying"
+    ? ALLOCATION_BADGE[h.state] || { cls: "past", label: h.state }
+    : h.checkOut >= todayISO()
+      ? { cls: "confirmed", label: "In effect" }
+      : { cls: "past", label: "Completed" };
 
 export default function Rooms() {
   const [units, setUnits] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [actionError, setActionError] = useState("");
+  const [historyRoom, setHistoryRoom] = useState(null);
+  const [history, setHistory] = useState(null);
+  const [historyError, setHistoryError] = useState("");
   const [q, setQ] = useState("");
   const [type, setType] = useState("");
   const [status, setStatus] = useState("");
@@ -46,9 +61,18 @@ export default function Rooms() {
     }
   };
 
+  const openHistory = (u) => {
+    setHistoryRoom(u);
+    setHistory(null);
+    setHistoryError("");
+    getRoomHistory(u.number)
+      .then((d) => setHistory(d.history))
+      .catch((e) => setHistoryError(e.message || "Could not load history."));
+  };
+
   return (
     <>
-      <AdminPageHead title="Rooms" note="Live housekeeping and inventory. Taking a room out of service blocks new bookings; releasing returns it to sale." />
+      <AdminPageHead title="Rooms" note="Live housekeeping and inventory. Taking a room out of service is blocked while it has active reservations — resolve those first. Releasing returns it to sale." />
 
       {loadError && <p className="form-alert" role="alert">{loadError}</p>}
       {actionError && <p className="form-alert" role="alert">{actionError}</p>}
@@ -79,10 +103,10 @@ export default function Rooms() {
       <div className="table-wrap">
         <table className="table table--admin">
           <thead>
-            <tr><th scope="col">Room</th><th scope="col">Type</th><th scope="col">Location</th><th scope="col">Sleeps</th><th scope="col">Status</th><th scope="col">Maintenance note</th><th scope="col">Set status</th></tr>
+            <tr><th scope="col">Room</th><th scope="col">Type</th><th scope="col">Location</th><th scope="col">Sleeps</th><th scope="col">Status</th><th scope="col">Maintenance note</th><th scope="col">Set status</th><th scope="col"><span className="sr-only">History</span></th></tr>
           </thead>
           <tbody>
-            {(units === null || filtered.length === 0) && <EmptyRow colSpan={7} />}
+            {(units === null || filtered.length === 0) && <EmptyRow colSpan={8} />}
             {filtered.map((u) => (
               <tr key={u.number}>
                 <td><strong>{u.number}</strong></td>
@@ -102,11 +126,53 @@ export default function Rooms() {
                     {ROOM_STATUSES.map((s) => <option key={s}>{s}</option>)}
                   </select>
                 </td>
+                <td><button className="link-arrow" onClick={() => openHistory(u)} aria-label={`History for room ${u.number}`}><span>History</span></button></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {historyRoom && (
+        <aside className="drawer drawer--wide" role="dialog" aria-label={`Allocation history for ${historyRoom.number}`}>
+          <div className="drawer__head">
+            <div>
+              <p className="eyebrow">Allocation history</p>
+              <h2 className="ad-panel__title">Room {historyRoom.number}</h2>
+              <p className="small">{historyRoom.roomName}</p>
+            </div>
+            <button className="drawer__close" onClick={() => setHistoryRoom(null)} aria-label="Close history"><X size={18} strokeWidth={1.5} /></button>
+          </div>
+          {historyError && <p className="form-alert" role="alert">{historyError}</p>}
+          {!history && !historyError && <p className="small" aria-live="polite">Loading…</p>}
+          {history && history.length === 0 && <p className="small">No allocations on record for this room yet.</p>}
+          {history && history.length > 0 && (
+            <div className="table-wrap">
+              <table className="table table--admin">
+                <thead>
+                  <tr><th scope="col">Dates</th><th scope="col">Type</th><th scope="col">State</th><th scope="col">Source</th><th scope="col">Outcome</th></tr>
+                </thead>
+                <tbody>
+                  {history.map((h, i) => (
+                    <tr key={i}>
+                      <td>{formatDate(h.checkIn)} → {formatDate(h.checkOut)}</td>
+                      <td>{h.kind === "block" ? "Maintenance" : h.kind === "hold" ? "Hold" : "Reservation"}</td>
+                      <td><span className={`badge badge--${allocationBadge(h).cls}`}>{allocationBadge(h).label}</span></td>
+                      <td>{h.reference ? (
+                        <>
+                          <span>{h.reference}</span>
+                          {h.guestName && <span className="small"> · {h.guestName}</span>}
+                        </>
+                      ) : (h.kind === "block" ? <span className="small">Maintenance block</span> : <span className="small">—</span>)}</td>
+                      <td>{h.reservationStatus || (h.kind === "hold" ? "Hold expired or converted" : h.kind === "block" ? "Block recorded" : "—")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </aside>
+      )}
     </>
   );
 }

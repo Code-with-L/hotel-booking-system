@@ -1,6 +1,6 @@
-# Build Plan — The Stillhouse
+# Build Plan - The Stillhouse
 
-**Status:** Approved direction at M0 (2026-11-11). Milestone gates are mandatory.
+**Status:** Approved direction at M0 (2026-11-11). Milestone gates are mandatory. M4 complete (2026-11-11) — owner-gated activation items remain; see `docs/reports/M4.md`.
 
 ## Working agreements
 - Small, reviewable commits; each commit compiles/passes tests for what it touches.
@@ -30,8 +30,14 @@ Arena export accepted into `apps/web/`; Express/Prisma/PostgreSQL backend; alloc
 ### M2 — Production readiness ✅ (2026-11-11, this milestone)
 Stages M2-A…M2-G above. Backend 20/20; e2e 3/3; both Docker images build; backup restore drill verified; measurement-backed performance work; all activation steps owner-gated and documented.
 
-### M3+ (renumbered)
-Remaining scope is the owner's call: pricing/tax sign-off, live Daraja registration, eTIMS certification (or explicit decision to defer paid launch until certified), photography commission, final release rehearsal, and M7-style release candidate review.
+### M3 - Arena experience refinement ✓ (2026-11-11)
+Visual pass on the guest-facing Arena experience (motion, navigation, mobile); no Arena redesign. Regression: API 20/20, e2e 3/3, build clean. See `docs/M3_VISUAL_REVIEW.md`.
+
+### M4 - Administrative Operations ✓ (2026-11-11, this milestone)
+Full operational maturity for the people who run the hotel: live dashboard (needs action, confirmed, payments summary, outstanding, cancellations 30d, occupancy/revenue), reservation workflow with paid-status badges and itemised pricing drawers (confirmed/cancel check-in/check-out with compare-and-swap transitions and audit in one tx), room + rate management with a hard no-override maintenance guard (409 + blocking references), room allocation history, guest CRM operational notes (audit-written), manager-only financial overview, receptionist+ history endpoint, audit-failure atomicity, concurrency hardening of allocation (`FOR UPDATE` + jittered backoff), and the M4 decision log. Backend 31/31 (8 consecutive clean runs), e2e 3/3, build clean, Docker Dockerfile set unchanged (verified M2). See `docs/reports/M4.md` and DECISIONS M4 block (D-035..D-040).
+
+### M5+ (owner's call)
+Remaining scope is the owner's call: pricing/tax sign-off, live Daraja registration, eTIMS certification (or explicit decision to defer paid launch until certified), photography commission, booking-modification (D-027 reopen), final release rehearsal. Recommended M5 scope: see `docs/reports/M4.md` §12.
 
 ## Open risks (register)
 - R1 — Arena output quality/deviation: mitigated by the staging gate; rejection criteria pre-agreed (HANDOFF_CHECKLIST §1–5).

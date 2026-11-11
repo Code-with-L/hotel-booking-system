@@ -32,6 +32,9 @@ adminRouter.get('/admin/dashboard', requireRole('receptionist', 'manager', 'admi
     ]);
 
     const active = reservations.filter((r) => !['cancelled'].includes(r.status));
+    const pending = reservations.filter((r) => r.status === 'pending');
+    const confirmed = reservations.filter((r) => r.status === 'confirmed');
+
     const arrivals = reservations.filter((r) => r.checkIn.toISOString().slice(0, 10) === todayISO() && ['confirmed', 'pending'].includes(r.status));
     const departures = reservations.filter((r) => r.checkOut.toISOString().slice(0, 10) === todayISO() && ['confirmed', 'checked_in'].includes(r.status));
     const inHouse = reservations.filter((r) => r.status === 'checked_in').length;
@@ -40,6 +43,20 @@ adminRouter.get('/admin/dashboard', requireRole('receptionist', 'manager', 'admi
     const revenueMinor = reservations
       .filter((r) => ['confirmed', 'checked_in', 'checked_out'].includes(r.status))
       .reduce((sum, r) => sum + r.totalMinor, 0);
+
+    // Operational counts: pending action, cancellations (recent 30d), payment overview
+    const since30 = new Date(Date.now() - 30 * 86400000);
+    const [cancelled30, payments, outstandingRows] = await Promise.all([
+      prisma.reservation.count({ where: { status: 'cancelled', cancelledAt: { gte: since30 } } }),
+      prisma.payment.groupBy({ by: ['status'], _count: { _all: true }, _sum: { amountMinor: true } }),
+      prisma.$queryRaw`
+        SELECT COALESCE(SUM(GREATEST(r."totalMinor" - COALESCE(p.paid, 0), 0)), 0)::bigint AS outstanding_minor
+        FROM reservation r
+        LEFT JOIN (SELECT "reservationId", SUM("amountMinor") AS paid FROM payment WHERE status = 'succeeded' GROUP BY "reservationId") p ON p."reservationId" = r.id
+        WHERE r.status IN ('confirmed', 'checked_in', 'checked_out')`,
+    ]);
+    const paymentSummary = Object.fromEntries(payments.map((p) => [p.status, { count: p._count._all, amountMinor: p._sum.amountMinor || 0 }]));
+    const outstandingMinor = Number(outstandingRows[0]?.outstanding_minor ?? 0);
 
     const occupiedTodayRows = await prisma.$queryRaw`
       SELECT DISTINCT ra.room_id FROM room_allocation ra
@@ -70,6 +87,12 @@ adminRouter.get('/admin/dashboard', requireRole('receptionist', 'manager', 'admi
       occupancy,
       revenue: major(revenueMinor),
       revenueMinor,
+      pendingCount: pending.length,
+      confirmedCount: confirmed.length,
+      cancelledLast30Days: cancelled30,
+      outstandingMinor,
+      outstanding: major(outstandingMinor),
+      paymentSummary,
       recent,
       byType,
     });
@@ -107,7 +130,13 @@ adminRouter.get('/admin/reservations', requireRole('receptionist', 'manager', 'a
         take: pageSize,
       }),
     ]);
-    res.json({ total, page, pageSize, rows: rows.map((r) => toListItem(r, roomNumbersOf(r))) });
+    // Attach succeeded-payment totals per reservation for the payments column
+    const ids = rows.map((r) => r.id);
+    const paid = ids.length
+      ? await prisma.payment.groupBy({ by: ['reservationId'], where: { reservationId: { in: ids }, status: 'succeeded' }, _sum: { amountMinor: true } })
+      : [];
+    const paidMap = new Map(paid.map((p) => [p.reservationId, p._sum.amountMinor || 0]));
+    res.json({ total, page, pageSize, rows: rows.map((r) => toListItem(r, roomNumbersOf(r), paidMap.get(r.id) ?? 0)) });
   } catch (err) { next(err); }
 });
 
@@ -118,7 +147,21 @@ adminRouter.get('/admin/reservations/:reference', requireRole('receptionist', 'm
       include: { guest: true, roomType: true, ratePlan: true, roomsAssigned: { include: { room: true } }, payments: { orderBy: { createdAt: 'asc' } } },
     });
     if (!r) throw notFound('Reservation not found.');
-    res.json({ ...toListItem(r, roomNumbersOf(r)), payments: r.payments.map((p) => ({ id: p.id, provider: p.provider, amountMinor: p.amountMinor, status: p.status, capturedAt: p.capturedAt, providerReference: p.providerReference })) });
+    res.json({
+      ...toListItem(r, roomNumbersOf(r)),
+      breakdown: {
+        nightlyMinor: r.nightlyMinor,
+        subtotalMinor: r.subtotalMinor,
+        serviceChargeMinor: r.serviceChargeMinor,
+        tourismLevyMinor: r.tourismLevyMinor,
+        vatMinor: r.vatMinor,
+        totalMinor: r.totalMinor,
+        taxesAndFeesMinor: r.serviceChargeMinor + r.tourismLevyMinor + r.vatMinor,
+        cancelFeeMinor: r.cancelFeeMinor ?? 0,
+        currency: r.currency,
+      },
+      payments: r.payments.map((p) => ({ id: p.id, provider: p.provider, amountMinor: p.amountMinor, status: p.status, capturedAt: p.capturedAt, providerReference: p.providerReference })),
+    });
   } catch (err) { next(err); }
 });
 
@@ -155,8 +198,11 @@ adminRouter.patch('/admin/reservations/:reference', requireRole('receptionist', 
       data.cancellationReason = req.validatedBody.reason || 'Cancelled by front desk';
     }
 
+    // Compare-and-swap: only the request whose expected status still holds may move the reservation
     const updated = await prisma.$transaction(async (tx) => {
-      const u = await tx.reservation.update({ where: { id: r.id }, data });
+      const moved = await tx.reservation.updateMany({ where: { id: r.id, status: r.status }, data });
+      if (moved.count !== 1) throw conflict('Another staff member changed this reservation first. Refresh and try again.');
+      const u = await tx.reservation.findUnique({ where: { id: r.id } });
       if (target === 'cancelled') {
         await releaseAllocations(tx, { sourceType: 'reservation', sourceId: r.id, state: 'released' });
       }
@@ -197,6 +243,30 @@ adminRouter.patch('/admin/rooms/:number', requireRole('receptionist', 'manager',
     if (!room) throw notFound('Room not found.');
     const { status, notes } = req.validatedBody;
     if (!status && notes === undefined) throw badRequest('Nothing to update.');
+
+    // Hard guard: a room with active (pending/confirmed/checked-in) reservations may NOT go out of service
+    // until those reservations are resolved. No overrides.
+    if (status === 'out_of_service' && room.status !== 'out_of_service') {
+      const today = new Date(`${todayISO()}T00:00:00.000Z`);
+      const occupied = await prisma.roomAllocation.findMany({
+        where: { roomId: room.id, state: 'occupying', kind: { in: ['hold', 'reservation'] }, checkOut: { gt: today } },
+        select: { sourceId: true },
+      });
+      const ids = [...new Set(occupied.map((a) => Number(a.sourceId)))];
+      if (ids.length) {
+        const overlapping = await prisma.reservation.findMany({
+          where: { id: { in: ids }, status: { in: ['pending', 'confirmed', 'checked_in'] } },
+          select: { reference: true },
+        });
+        if (overlapping.length) {
+          throw conflict(
+            `Room ${room.number} has ${overlapping.length} active reservation(s) overlapping the maintenance window: ${overlapping.map((r) => r.reference).join(', ')}. ` +
+            'Complete, cancel or relocate those stays first. There is no override.'
+          );
+        }
+      }
+    }
+
     const updated = await prisma.$transaction(async (tx) => {
       let u = room;
       if (status && status !== room.status) {
@@ -396,6 +466,56 @@ adminRouter.put('/admin/settings', requireRole('manager', 'admin'), validate(set
   } catch (err) { next(err); }
 });
 
+// ---------- Room allocation history ----------
+adminRouter.get('/admin/rooms/:number/history', requireRole('receptionist', 'manager', 'admin'), async (req, res, next) => {
+  try {
+    const room = await prisma.room.findFirst({ where: { number: req.params.number }, include: { roomType: true } });
+    if (!room) throw notFound('Room not found.');
+    const rows = await prisma.$queryRaw`
+      SELECT a.check_in, a.check_out, a.kind, a.state, a.expires_at, a.created_at,
+             r.reference, r.status AS reservation_status, r."totalMinor",
+             g."firstName", g."lastName"
+      FROM room_allocation a
+      LEFT JOIN reservation r ON a.source_type = 'reservation' AND a.source_id = r.id
+      LEFT JOIN guest g ON g.id = r."guestId"
+      WHERE a.room_id = ${room.id}::bigint
+      ORDER BY a.created_at DESC
+      LIMIT 50`;
+    res.json({
+      room: { number: room.number, roomSlug: room.roomType.slug, roomName: room.roomType.name },
+      history: rows.map((r) => ({
+        checkIn: r.check_in instanceof Date ? r.check_in.toISOString().slice(0, 10) : String(r.check_in),
+        checkOut: r.check_out instanceof Date ? r.check_out.toISOString().slice(0, 10) : String(r.check_out),
+        kind: r.kind,
+        state: r.state,
+        expiresAt: r.expires_at instanceof Date ? r.expires_at.toISOString() : null,
+        reference: r.reference ?? null,
+        reservationStatus: r.reservation_status ?? null,
+        guestName: r.firstName ? `${r.firstName} ${r.lastName}`.trim() : null,
+        totalMinor: r.totalMinor ?? null,
+      })),
+    });
+  } catch (err) { next(err); }
+});
+
+// ---------- Guest operational notes ----------
+adminRouter.patch('/admin/guests/:id', requireRole('receptionist', 'manager', 'admin'), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) throw badRequest('Invalid guest id.');
+    const notes = String(req.body?.notes ?? '').trim();
+    if (notes.length > 800) throw badRequest('Notes must be 800 characters or fewer.');
+    const guest = await prisma.guest.findUnique({ where: { id } });
+    if (!guest) throw notFound('Guest not found.');
+    const updated = await prisma.$transaction(async (tx) => {
+      const u = await tx.guest.update({ where: { id }, data: { notes: notes || null } });
+      await audit(tx, { actorUserId: req.auth.user.id, action: 'guest.notes_updated', entity: 'guest', entityId: id, before: { notes: guest.notes }, after: { notes: u.notes }, ip: req.ip });
+      return u;
+    });
+    res.json({ id: String(updated.id), notes: updated.notes || '' });
+  } catch (err) { next(err); }
+});
+
 // ---------- Payments reconciliation (for daily settlement) ----------
 adminRouter.get('/admin/reports/reconciliation', requireRole('manager', 'admin'), async (req, res, next) => {
   try {
@@ -432,6 +552,83 @@ adminRouter.get('/admin/reports/reconciliation', requireRole('manager', 'admin')
         amountMinor: p.amountMinor,
         status: p.status,
         capturedAt: p.capturedAt,
+      })),
+    });
+  } catch (err) { next(err); }
+});
+
+// ---------- Financial overview (manager/admin only) ----------
+adminRouter.get('/admin/reports/financial-summary', requireRole('manager', 'admin'), async (_req, res, next) => {
+  try {
+    const [paymentAgg, refundAgg, feesAgg, outstandingReservations, recentPayments] = await Promise.all([
+      prisma.payment.groupBy({ by: ['status'], _sum: { amountMinor: true }, _count: { _all: true } }),
+      prisma.paymentAttempt.aggregate({ where: { status: 'refunded' }, _sum: { amountMinor: true }, _count: { _all: true } }),
+      prisma.reservation.aggregate({ where: { status: 'cancelled' }, _sum: { cancelFeeMinor: true }, _count: { _all: true } }),
+      prisma.$queryRaw`
+        SELECT r.reference, r."guestId", r.status, r."checkIn", r."totalMinor",
+               COALESCE(p.paid, 0)::bigint AS paid_minor
+        FROM reservation r
+        LEFT JOIN (SELECT "reservationId", SUM("amountMinor") AS paid FROM payment WHERE status = 'succeeded' GROUP BY "reservationId") p ON p."reservationId" = r.id
+        WHERE r.status IN ('confirmed', 'checked_in', 'checked_out')
+          AND GREATEST(r."totalMinor" - COALESCE(p.paid, 0), 0) > 0
+        ORDER BY r."checkIn" ASC
+        LIMIT 25`,
+      prisma.payment.findMany({
+        include: { reservation: { select: { reference: true, guest: { select: { firstName: true, lastName: true } } } } },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+    ]);
+
+    const byStatus = Object.fromEntries(paymentAgg.map((p) => [p.status, { count: p._count._all, amountMinor: p._sum.amountMinor || 0 }]));
+    const collectedMinor = (byStatus.succeeded?.amountMinor) || 0;
+    const outstandingAgg = await prisma.$queryRaw`
+      SELECT COALESCE(SUM(GREATEST(r."totalMinor" - COALESCE(p.paid, 0), 0)), 0)::bigint AS outstanding_minor
+      FROM reservation r
+      LEFT JOIN (SELECT "reservationId", SUM("amountMinor") AS paid FROM payment WHERE status = 'succeeded' GROUP BY "reservationId") p ON p."reservationId" = r.id
+      WHERE r.status IN ('confirmed', 'checked_in', 'checked_out')`;
+    const outstandingMinor = Number(outstandingAgg[0]?.outstanding_minor ?? 0);
+
+    // Enrich outstanding list with guest names
+    const guestIds = [...new Set(outstandingReservations.map((r) => r.guestId))];
+    const guests = guestIds.length
+      ? await prisma.guest.findMany({ where: { id: { in: guestIds } }, select: { id: true, firstName: true, lastName: true } })
+      : [];
+    const guestMap = new Map(guests.map((g) => [g.id, g]));
+
+    res.json({
+      currency: 'KES',
+      collected: Math.round(collectedMinor / 100),
+      collectedMinor,
+      succeededCount: byStatus.succeeded?.count || 0,
+      pendingMinor: byStatus.pending?.amountMinor || 0,
+      pendingCount: byStatus.pending?.count || 0,
+      failedCount: byStatus.failed?.count || 0,
+      refunds: Math.round((refundAgg._sum.amountMinor || 0) / 100),
+      refundsMinor: refundAgg._sum.amountMinor || 0,
+      refundCount: refundAgg._count._all,
+      cancellationFees: Math.round((feesAgg._sum.cancelFeeMinor || 0) / 100),
+      cancellationFeesMinor: feesAgg._sum.cancelFeeMinor || 0,
+      cancelledCount: feesAgg._count._all,
+      outstanding: Math.round(outstandingMinor / 100),
+      outstandingMinor,
+      outstandingReservations: outstandingReservations.map((r) => ({
+        reference: r.reference,
+        status: r.status,
+        arrival: r.checkIn instanceof Date ? r.checkIn.toISOString().slice(0, 10) : String(r.checkIn),
+        guestName: guestMap.has(r.guestId) ? `${guestMap.get(r.guestId).firstName} ${guestMap.get(r.guestId).lastName}`.trim() : undefined,
+        total: Math.round(r.totalMinor / 100),
+        paid: Math.round(Number(r.paid_minor) / 100),
+        balance: Math.round((r.totalMinor - Number(r.paid_minor)) / 100),
+      })),
+      recentPayments: recentPayments.map((p) => ({
+        id: p.id,
+        date: p.createdAt.toISOString(),
+        reference: p.reservation?.reference,
+        guestName: p.reservation?.guest ? `${p.reservation.guest.firstName} ${p.reservation.guest.lastName}`.trim() : undefined,
+        provider: p.provider,
+        amount: Math.round(p.amountMinor / 100),
+        status: p.status,
       })),
     });
   } catch (err) { next(err); }
