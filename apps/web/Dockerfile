@@ -10,6 +10,8 @@ RUN npm run build --workspace=@stillhouse/web
 
 FROM nginx:1.29-alpine AS runtime
 ARG NGINX_CONF=nginx.conf
+# Patch OS packages at build time (fixable CRITICAL/HIGH CVEs in alpine base packages)
+RUN apk update && apk upgrade --no-cache
 COPY apps/web/${NGINX_CONF} /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 EXPOSE 8080

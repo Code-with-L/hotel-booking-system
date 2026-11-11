@@ -11,8 +11,9 @@ RUN npm ci --omit=dev -w @stillhouse/api -w @stillhouse/shared --include-workspa
 
 FROM node:22-alpine AS runtime
 # Drop the bundled npm/corepack/npx from the production image — the app runs via `node` directly.
-# Eliminates the npm-internal CVE class and reduces image surface.
-RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+# Eliminates the npm-internal CVE class and reduces image surface; patch OS packages too.
+RUN apk update && apk upgrade --no-cache \
+ && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
            /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 ENV NODE_ENV=production \
     PORT=4000
