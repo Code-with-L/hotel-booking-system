@@ -10,44 +10,33 @@
 - The backend adapts to the accepted Arena frontend — never force-fit the frontend.
 - No milestone begins while critical acceptance tests of earlier milestones fail.
 
-## Milestones
+## M2 stage detail (all 2026-11-11)
+- **M2-A Daraja readiness ✅** STK push/callback/query implemented; request payload verified against mocked HTTP (base64 password construction asserted); requery sweeper for lost callbacks; reconciliation endpoint; IP allowlist; logs redact. Activation: `ACTIVATE_MPESA.md`. **Not live-verified — sandbox required.**
+- **M2-B Transactional email ✅** Branded HTML/text templates; persistent outbox with (template, reference) dedupe; SMTP (any provider) or silent skip; booking confirmation, payment received, cancellation, password reset, admin new-booking alerts. Activation: `ACTIVATE_EMAIL.md`.
+- **M2-C Tax & eTIMS readiness ✅ (design + partial implementation; KRA certification owner-gated)** `TaxInvoice` model, provider boundary (`Mock` for tests / `OscU` for KRA / `disabled`), retry sweeper, receipt series, audit trail; no fabricated wire formats; not compliant until certified. Activation: `ACTIVATE_ETIMS.md`.
+- **M2-D Security hardening ✅** Boot-time production config guards; RBAC verified; seed now prod-safe (catalogue-only without explicit passwords); rate-limit bypass scoped to webhooks/health; session sweep; structured logs with redaction; findings + residuals: `SECURITY_REVIEW.md`.
+- **M2-E Performance & reliability ✅** N+1 eliminated (5.7× availability throughput, measured); indexes verified sufficient at this scale; `/api/v1/ready`; graceful shutdown + connection drain; vendor bundle split; `PERFORMANCE.md`.
+- **M2-F Production deployment architecture ✅** Non-root API image; nginx SPA image with CSP + security headers; `docker-compose.prod.yml` reference; migration-on-release; rollback = redeploy previous tag (additive-only migrations); monitoring guidance; `DEPLOYMENT.md`; **backup restore drill performed** (`BACKUP_RESTORE.md`).
+- **M2-G Operational readiness ✅** Staff runbook (daily flow, desk settlement, reconciliation, refunds, blocks, rates, exits): `OPERATIONS.md`.
 
-### M0 — Product specification ✅ (this milestone)
-Deliverable: approved project blueprint — documentation + repository hygiene. **No application code.**
-Exit: owner sign-off on blueprint; repo flattened; commits created.
+Note: frontend design unchanged throughout M2 (Arena system intact; only service plumbing, loading states and small copy edits where functionality demanded).
 
-### M1 — Arena frontend + backend + integration ✅ (implemented 2026-11-11)
-Arena export located (`stillhouse-luxury-hospitality-website.zip`), staged in `../arena-staging/`, NEXT/TS debris removed, accepted into `apps/web/`. Backend built (Express + Prisma + PostgreSQL): authn/BCrypt sessions, RBAC, allocation-ledger reservation engine (exclusion constraint verified), M-Pesa boundary with truthful unconfigured state + desk settlement, full admin API. Frontend `src/services/*` and `AuthContext` rewired to the live API (quote computed server-side; holds created; session bootstrap; admin pages async). e2e green (guest book → held → staff confirm → guest sees confirmed), backend 17/17 green, concurrency probe 5/5.
-Stages: M1-A repo/DB/migrations/seed ✅ · M1-B auth/RBAC/admin ✅ · M1-C availability/reservations ✅ · M1-D payments/admin ✅ · M1-E frontend integration ✅ · M1-F tests/e2e/build ✅.
-Deviations (see DECISIONS D-021…D-029): Vite pinned to 6.4.6; M-Pesa unavailable until Daraja registered (503, desk settlement path live); no booking edit (cancel+rebook); no outbound email (503, never faked); eTIMS deferred; booking fixtures are dev seeds; Daraja webhook replay safe and admin-rooms RBAC enforced.
+### M0 — Product specification ✅ (2026-11-11)
+Blueprint approved; repo flattened; docs committed.
 
-### M2 — GSAP & motion pass
-Tune existing animations of the accepted design (absent files/edge cases, reduced-motion coverage, performance). **Not a redesign.** Exit: motion consistent with DESIGN_SYSTEM §Animation; no jank on low-end hardware; owner eyeball approval.
+### M1 — Arena frontend + backend + integration ✅ (2026-11-11)
+Arena export accepted into `apps/web/`; Express/Prisma/PostgreSQL backend; allocation-ledger reservation engine; auth/RBAC; M-Pesa boundary + desk settlement; admin operations; API 17/17; e2e 3/3. Deviations per D-021…D-029 (Vite 6.4.6; Daraja deferred to owner registration; email deferred until M2; eTIMS deferred; booking fixtures dev-only).
 
-### M3 — Database & API foundation
-PostgreSQL 16 via Docker; Prisma schema per `DATABASE_DESIGN.md` (incl. `btree_gist`, `room_allocation` exclusion constraint); migrations + seed (28 rooms, 3 types, sample rates); Express skeleton; session auth; zod middleware; error model; `/api/v1/room-types`, `/availability`; integration tests for the allocation constraint (concurrent booking race → exactly one wins).
-Exit: `docker compose up` → migrate → seed → API serves real availability; CI green.
+### M2 — Production readiness ✅ (2026-11-11, this milestone)
+Stages M2-A…M2-G above. Backend 20/20; e2e 3/3; both Docker images build; backup restore drill verified; measurement-backed performance work; all activation steps owner-gated and documented.
 
-### M4 — Reservation engine
-Quotes (server-side, taxes per TAX_AND_CHARGES.md **approved** approach), reservation creation TX, allocation hold + 15-min TTL + sweeper, cancellation, idempotency keys, state machine, price snapshot. Integration tests: full booking flow, expiry race, double-booking attempt, quote-expired rejection.
-Exit: end-to-end reservation lifecycle passes in tests; owner review of booking math.
-
-### M5 — Payments & authentication
-Guest accounts (register/verify/reset), RBAC staff seeding; **M-Pesa Daraja** end-to-end (STK → callback → webhook verify → confirm), `payment_attempt` audit; transactional email (confirmation/cancellation) via provider-agnostic interface; card provider scaffolding (interface only, unless approved earlier).
-Exit: sandbox STK payment confirms a real reservation in a test environment; negative webhook tests pass; audit log complete.
-
-### M6 — Administration
-Dashboard KPIs, reservation management (search/filter/status), rooms & maintenance blocks (block cannot overlap occupied dates — enforced), rates management, guest CRM, reports (occupancy/revenue SVG charts already exist on frontend — wire to real endpoints), audit log viewer.
-Exit: front-desk can run a day's arrivals/departures/check-ins; owner walkthrough.
-
-### M7 — Quality, security & release
-Vitest coverage targets; Playwright e2e (search → book → pay-sandbox → confirmation; admin sign-in); security review per `SECURITY.md` (RBAC matrix, rate limits, CSRF, webhook negatives, `npm audit`); accessibility pass (WCAG 2.1 AA); performance budget (LCP/CLS); Lighthouse; deployment decision; runbooks; backup/restore drill.
-Exit: release candidate; owner sign-off.
+### M3+ (renumbered)
+Remaining scope is the owner's call: pricing/tax sign-off, live Daraja registration, eTIMS certification (or explicit decision to defer paid launch until certified), photography commission, final release rehearsal, and M7-style release candidate review.
 
 ## Open risks (register)
 - R1 — Arena output quality/deviation: mitigated by the staging gate; rejection criteria pre-agreed (HANDOFF_CHECKLIST §1–5).
 - R2 — Tax/levy correctness: provisional policy implemented (SC 10%, levy 2%, VAT 16% net). Owner/accountant sign-off still required before real launch (TAX_AND_CHARGES.md §4).
-- R3 — M-Pesa Daraja sandbox vs Go-Live credential lead time: register Daraja app early (M1/M2), not M5.
-- R4 — Stock imagery licensing: Pexels placeholders cannot ship publicly; commissioned shoot or licensed purchase before M7.
-- R5 — eTIMS: required for real Kenyan sales; not in any milestone yet — flag to owner before production launch.
+- R3 — M-Pesa Daraja sandbox vs Go-Live credential lead time: registration should start now (ACTIVATE_MPESA.md), not after launch.
+- R4 — Stock imagery licensing: current photography cannot ship publicly; commission or license before the site goes live.
+- R5 — eTIMS: required for a real Kenyan trading property; not certified yet — decide launch scope accordingly (ACTIVATE_ETIMS.md).
 - R6 — Scope creep via Arena: Arena may invent routes/features; FRONTEND_MAP.md is the acceptance baseline.

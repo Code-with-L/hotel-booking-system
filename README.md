@@ -2,7 +2,7 @@
 
 A fictional 28-room boutique luxury retreat above the Great Rift Valley, Naivasha, Kenya — a working reservation platform: public website, booking engine, M-Pesa-ready payments, guest accounts and an operating dashboard.
 
-**Status: M1 complete (2026-11-11). Full stack is built and verified. Owner decision required: tax sign-off before real launch (see `docs/BUILD_PLAN.md` R2).**
+**Status: M2 complete — production-ready build, owner-gated activation items remain (M2-A/B/C credentials). See `docs/BUILD_PLAN.md` and `docs/ACTIVATE_*.md`.**
 
 ## Run it
 
@@ -23,7 +23,7 @@ npm run dev:api        # http://localhost:4000/api/v1
 npm run dev:web        # http://localhost:5173 (proxying /api)
 
 # 4. Verify
-npm test --workspace=@stillhouse/api     # 17 API tests (real PostgreSQL, incl. race-condition test)
+npm test --workspace=@stillhouse/api     # 20 API tests (real PostgreSQL, race-condition, Daraja mock suite)
 npx playwright test                      # 3 e2e journeys (guest books → staff confirms → guest sees it)
 npm run build --workspace=@stillhouse/web
 ```
@@ -40,6 +40,14 @@ Starting state after `npm run db:seed`: **demo fixtures are clearly fake** (exam
 | `docs/ARCHITECTURE.md` | Modular monolith; workspaces; the `src/services/*` seam; API rules |
 | `docs/DESIGN_SYSTEM.md` | Tokens, typography, components, motion — canonical visual truth |
 | `docs/FRONTEND_MAP.md` | Route map the Arena frontend must implement |
+| `docs/DEPLOYMENT.md` | Production architecture, release & rollback, monitoring |
+| `docs/OPERATIONS.md` | Daily staff runbook: arrivals, settlement, refunds, blocks, rates |
+| `docs/BACKUP_RESTORE.md` | Backup cadence + performed restore drill (evidence) |
+| `docs/PERFORMANCE.md` | Measured load tests and optimisation notes |
+| `docs/SECURITY_REVIEW.md` | M2-D audit: findings, fixes, residual risks |
+| `docs/ACTIVATE_MPESA.md` | Owner steps for Daraja STK (current: mock-verified only) |
+| `docs/ACTIVATE_EMAIL.md` | Owner steps for SMTP transactional email |
+| `docs/ACTIVATE_ETIMS.md` | KRA eTIMS reality + what remains owner-side |
 | `docs/ARENA_HANDOFF_BRIEF.md` | Original Arena brief (historical — the frontend now exists in `apps/web/`) |
 | `docs/HANDOFF_CHECKLIST.md` | Acceptance gate used for the Arena handoff (M1) |
 | `docs/DATABASE_DESIGN.md` | Schema direction; allocation-ledger overlap prevention |

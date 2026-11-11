@@ -22,7 +22,8 @@ CSRF: SameSite=Lax cookie + JSON-only APIs; CORS allowlist (`WEB_ORIGIN`); crede
 | `POST /enquiries` | `{ kind:'experience'\|'dining', subject, name, email, date?, guests, message }` | `201 { id }` |
 | `POST /newsletter` | `{ email }` | `{ subscribed: true }` |
 | `POST /payments` | `{ reservationReference, phone?, email? }` | `201 { status:"pending", checkoutRequestId, … }` when Daraja configured; otherwise `503 MPESA_NOT_CONFIGURED`. **Never a fake success.** |
-| `POST /webhooks/mpesa` | Daraja STK callback | `{ ResultCode: 0|1, ResultDesc }`. Verifies structure + amount + reference; confirms reservation transactionally; idempotent on replay. Optional IP allowlist (`MPESA_WEBHOOK_ALLOWED_IPS`) |
+| `POST /webhooks/mpesa` | Daraja STK callback | `{ ResultCode: 0|1, ResultDesc }`. Verifies structure + amount + reference; confirms reservation transactionally; idempotent on replay. Optional IP allowlist (`MPESA_WEBHOOK_ALLOWED_IPS`). **Not rate-limited** (provider retries) |
+| `GET /ready` | liveness/readiness (DB `SELECT 1`) | `200 { ok, db: "up" }` or `503` |
 
 ## Guest account (session cookie)
 `POST /auth/register` · `POST /auth/sign-in` (rate-limited) · `POST /auth/sign-out` · `GET /auth/me` · `POST /auth/forgot-password` (503 unless `EMAIL_PROVIDER` configured) · `POST /auth/reset-password` · `GET /account/reservations` → `{ upcoming[], previous[] }` · `PUT /account/profile`.
@@ -43,5 +44,14 @@ Sessions: server-managed, HttpOnly, `SameSite=Lax`, absolute 7d, idle 8h (config
 | `GET /admin/reports/monthly?months` | Reservations + revenue (KSh) by month and room type |
 | `GET /admin/settings` / `PUT /admin/settings` | Validated hotel/policies/booking settings (KV) — manager/admin |
 | `POST /admin/payments/manual` | Desk settlement — full balance only; confirms reservation; receptionist+ |
+| `POST /admin/payments/:id/requery` | STK query for a pending M-Pesa payment; confirms or fails per Daraja truth; manager/admin |
 | `POST /admin/payments/:id/refund` | Records a manual refund (funds move outside the system); manager/admin |
+| `GET /admin/reports/reconciliation?from&to` | Payment ledger for daily settlement: rows + totals; manager/admin |
 | `GET /admin/audit-log?entity&page&pageSize` | Append-only audit trail — admin only |
+
+## Cross-cutting (added M2)
+- All money integers; all endpoints validate with zod; all writes emit audit_log.
+- Pagination: page + pageSize (default 25, max 100).
+- On reservation confirmed, a tax_invoice row is recorded (`issued` via configured eTIMS provider; `skipped` when disabled). Booking confirmation email is attempted; booking flow never blocks on it.
+- `/api/v1/health` is for uptime probes; `/api/v1/ready` additionally checks PostgreSQL.
+- Webhook and health endpoints are exempt from the global rate limiter (provider retries); all other /api/v1 routes share 300 req/15min per IP.

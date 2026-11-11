@@ -62,10 +62,16 @@ Arena exports are staged in `../arena-staging/` (sibling of repo root) and never
 ## D-020 (2026-11-11) — Documentation-first; AI boundaries
 OpenCode: backend engineering, integration, docs. Arena: visual frontend. AI never invents schema/relationships, never silently expands scope, never commits secrets, never marks features complete without tests. Milestone gates are mandatory.
 
+- D-030 (2026-11-11) — M2-A: Daraja integration verified against **mocked HTTP** (request shape incl. base64 password construction, callback verification with structure+amount+reference checks, replay idempotency, STK requery sweep for lost callbacks). **No live payment has been tested — credentials are owner-gated.** Activation runbook: `docs/ACTIVATE_MPESA.md`.
+- D-031 (2026-11-11) — M2-B: Transactional email as outbox-persisted pipeline (`email_outbox`, dedupe per (template, reference)). SMTP via nodemailer (any provider) or explicit skip when unconfigured. Templates branded HTML+text. Confirmation gap: booking never claims "email received" unless outbox says `sent`.
+- D-032 (2026-11-11) — M2-C: eTIMS boundary implemented (`TaxInvoice` model, provider interface, `MockEtimsProvider` for tests/dev, `OscUProvider` for KRA; sales-invoice wire format deliberately NOT fabricated — requires owner KRA sandbox registration and the OSCU spec). App is not eTIMS-compliant; reservations issue nothing until activated. See `ACTIVATE_ETIMS.md`.
+- D-033 (2026-11-11) — M2-D: Security review recorded in `SECURITY_REVIEW.md`. Boot-time production guards: SESSION_SECRET strength, COOKIE_SECURE=true, HTTPS WEB_ORIGIN (all enforced). Prod seed creates catalogue only without SEED_* passwords. Webhooks bypass rate limit (provider retries). Session sweep every 60s. Dev default-password fixtures remain dev-only.
+- D-034 (2026-11-11) — M2-E/F/G: N+1 elimination in availability/pricing (5.7×, p50 316→55 ms at 40 conn, measured); vendor chunk split; autocannon load test committed; production Dockerfiles build-verified; restore drill performed (dump→scratch counts verified); operational runbooks written (`OPERATIONS.md`, `DEPLOYMENT.md`, `BACKUP_RESTORE.md`, `PERFORMANCE.md`, `ACTIVATE_*.md`, `SECURITY_REVIEW.md`).
+
 ## Open (owner decision required)
 - O-1 — Tax computation approval (TAX_AND_CHARGES.md §4). **Provisional approach implemented in M1**: configurable-by-code policy — SC 10%, Tourism Levy 2%, VAT 16% on net; SC and levy excluded from VAT base (VAT Act s.13(7)). Still needs your/accountant sign-off before real launch.
 - O-2 — Card provider choice (if/when): Flutterwave vs DPO vs Stripe.
-- O-3 — Production hosting & managed PostgreSQL provider (decide at M7).
+- O-3 — Production hosting & managed PostgreSQL provider (decide at M7 or with owner now — DEPLOYMENT.md lays out options).
 - O-4 — Photography: commissioned shoot vs licensed stock vs Arena-generated placeholders (launch blocker; see BUILD_PLAN R4).
 - O-5 — eTIMS scope for first real deployment (BUILD_PLAN R5).
 - O-6 — Guest confirmation access policy. **Resolved in M1**: confirmation page shows reference + status; guest retrieval requires sign-in or reference+email.
