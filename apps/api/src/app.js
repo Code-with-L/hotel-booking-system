@@ -64,3 +64,7 @@ export const createApp = () => {
 
   return app;
 };
+
+// Vercel entrypoint: Express on Vercel expects a default export of the app.
+export default createApp();
+
