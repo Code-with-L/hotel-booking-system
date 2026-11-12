@@ -99,6 +99,14 @@ authRouter.get('/me', requireAuth, (req, res) => {
   res.json({ account: accountPayload(req.auth.user, req.auth.guest) });
 });
 
+// Anonymous-safe session probe for the web client hydrate.
+// Always 200: { authenticated: false } for guests, { authenticated: true, account } when signed in.
+// Kept separate from /me so curl-style probes and browser tooling do not log a 401 on every page load.
+authRouter.get('/session', (req, res) => {
+  if (req.auth) return res.json({ authenticated: true, account: accountPayload(req.auth.user, req.auth.guest) });
+  res.json({ authenticated: false });
+});
+
 // Password reset: only available when an email provider is configured. Otherwise 503 - never fake an email being sent.
 authRouter.post('/forgot-password', authLimiter, async (req, res, next) => {
   try {

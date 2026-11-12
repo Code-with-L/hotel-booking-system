@@ -1,16 +1,20 @@
 /**
  * Centralised photography registry.
- * All imagery is stock photography (Pexels) used as a stand-in for a future
- * commissioned shoot. Replace an entry here and it updates everywhere.
- * Each photo is { id, alt }; `photoUrl` builds a sized URL.
+ * All imagery is self-hosted stock photography (Pexels, free license), staged in
+ * public/photos/{id}-{width}.jpeg as a stand-in for a future commissioned shoot.
+ * To ship commissioned photography, replace the files in public/photos/ and the
+ * public/photos paths stay valid - this registry stays the single source of truth.
+ * Each photo is { id, alt }; `photoUrl` builds a local sized path.
  */
-const HOST = "https://images.pexels.com/photos";
+const HOST = "/photos";
 
-export const photoUrl = (photo, width = 1600) =>
-  `${HOST}/${photo.id}/pexels-photo-${photo.id}.jpeg?auto=compress&cs=tinysrgb&w=${width}`;
+const FAMILY = [480, 768, 1280, 1600, 1920];
+const nearest = (w) => FAMILY.reduce((a, b) => (Math.abs(b - w) < Math.abs(a - w) ? b : a));
 
-export const photoSrcSet = (photo, widths = [480, 640, 1024, 1600, 2200]) =>
-  widths.map((w) => `${photoUrl(photo, w)} ${w}w`).join(", ");
+export const photoUrl = (photo, width = 1600) => `${HOST}/${photo.id}-${nearest(width)}.jpeg`;
+
+export const photoSrcSet = (photo, widths = FAMILY) =>
+  widths.map((w) => `${HOST}/${photo.id}-${w}.jpeg ${w}w`).join(", ");
 
 const p = (id, alt) => ({ id, alt });
 

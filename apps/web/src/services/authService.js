@@ -11,8 +11,8 @@ export const getAccount = () => cachedAccount;
 
 export async function bootstrap() {
   try {
-    const { account } = await request("/auth/me");
-    cachedAccount = account || null;
+    const { authenticated, account } = await request("/auth/session");
+    cachedAccount = authenticated && account ? account : null;
   } catch {
     cachedAccount = null;
   }
