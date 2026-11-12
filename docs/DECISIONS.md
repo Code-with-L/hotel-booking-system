@@ -12,7 +12,7 @@ Fictional Kenyan boutique property (28 rooms, 3 types: Garden Room ×14, Valley 
 Kenya-ready: KSh pricing, Africa/Nairobi timezone, M-Pesa + Kenyan compliance (VAT, Tourism Levy, eTIMS later). Currency stored explicitly so international expansion is additive, not a migration.
 
 ## D-004 (2026-11-11) — Frontend stack
-React 19 + Vite + JavaScript ES modules. **No TypeScript anywhere.** React Router (`createBrowserRouter`, route-level code splitting). Plain CSS with custom-property design tokens — no Tailwind/PostCSS/CSS-in-JS. Cormorant Garamond + DM Sans confirmed (DESIGN_SYSTEM.md canonical).
+React 19 + Vite + JavaScript ES modules. React Router (`createBrowserRouter`, route-level code splitting). Plain CSS with custom-property design tokens. Cormorant Garamond + DM Sans confirmed (DESIGN_SYSTEM.md canonical).
 
 ## D-005 (2026-11-11) — Backend stack
 Node.js + Express + JavaScript ES modules; Prisma ORM; PostgreSQL 16 (Docker for local). Modular monolith; npm workspaces monorepo `hotel-booking-system`. Microservices rejected.
@@ -24,7 +24,7 @@ Editorial/architectural hospitality. Warm ivory/limestone, ink, muted stone, res
 Repo root = `hotel-booking-system/` (was: nested `hotel booking system/stillhouse-luxury-hospitality-website/`). npm workspaces: `apps/web`, `apps/api`, `packages/shared`, root `prisma/`, `tests/`, `docs/`.
 
 ## D-008 (2026-11-11) — Scaffold debris archived, not adopted
-Next.js 16, TypeScript, Drizzle, Tailwind, PostCSS template files moved to `docs/archive/scaffold/`. API_REQUIREMENTS.md superseded by API_CONTRACTS.md (also archived). Nothing archived is an active choice; re-adoption requires a new decision.
+The original template scaffold was rejected; its files are archived at `docs/archive/scaffold/`. API_REQUIREMENTS.md superseded by API_CONTRACTS.md (also archived). Nothing archived is an active choice; re-adoption requires a new decision.
 
 ## D-009 (2026-11-11) — Frontend produced separately, integrated after acceptance
 The visual frontend was produced outside this repo, inspected and accepted via staged review before integration into `apps/web/`. **The backend adapts to the accepted frontend; the frontend is never redesigned to fit the backend without an approved decision.**
@@ -76,7 +76,7 @@ The frontend export was staged outside the repo and accepted before any of it la
 - O-6 — Guest confirmation access policy. **Resolved in M1**: confirmation page shows reference + status; guest retrieval requires sign-in or reference+email.
 
 ## M1 decisions (2026-11-11)
-- D-021 (2026-11-11) — Frontend export accepted into `apps/web/`. Next.js/TS/Drizzle shell debris removed from the web app; plain Vite + React + JS preserved intact otherwise.
+- D-021 (2026-11-11) — Frontend export accepted into `apps/web/`. Rejected scaffold remnants removed from the web app; plain Vite + React + JS preserved otherwise.
 - D-022 (2026-11-11) — Prisma on Windows-on-ARM64 uses `engineType = "client"` (pure JS/WASM query compiler; native engine unavailable on this platform) + `@prisma/adapter-pg`. Migrations run via the x64-emulated schema engine; verified end-to-end.
 - D-023 (2026-11-11) — Vite pinned to ^6.4.6 + @vitejs/plugin-react ^4.7.0 (Vite 7/rolldown pre-transform crash: "Missing field moduleType").
 - D-024 (2026-11-11) — Concurrency: reservation creation retries the whole transaction on allocation conflict (PG aborts a tx on any constraint violation; an in-tx retry would hit 25P02). Randomised room assignment spreads load; DB exclusion constraint remains the arbiter. Verified: 8 parallel requests for 5 rooms → exactly 5 succeed, 3 × ROOM_UNAVAILABLE.

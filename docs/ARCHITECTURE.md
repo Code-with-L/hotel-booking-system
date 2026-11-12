@@ -80,7 +80,7 @@ Booking integrity is enforced in the database (see `DATABASE_DESIGN.md`), not by
 
 1. React never queries PostgreSQL and never decides whether a reservation is valid.
 2. The frontend is never redesigned to fit the backend without an approved decision.
-3. No TypeScript, no Next.js, no Drizzle, no Tailwind, no CSS frameworks. Plain CSS tokens.
+3. JavaScript ES modules only. Plain CSS tokens (no CSS frameworks).
 4. No secrets in source. `.env` is gitignored; `.env.example` lists key names only.
 5. Two-phase booking integrity: DB constraints + transactions, not application-side checks.
 6. Never any fake success responses, "DEMO" data in production paths, or placeholder payment confirmations.

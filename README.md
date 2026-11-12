@@ -4,7 +4,7 @@ A fictional 28-room boutique luxury retreat above the Great Rift Valley, Naivash
 
 ## Stack
 
-- **Frontend:** React 18 + Vite 6, plain JS (no TypeScript), self-hosted fonts, no third-party origins
+- **Frontend:** React 18 + Vite 6, plain JS, self-hosted fonts, no third-party origins
 - **Backend:** Express, Prisma, PostgreSQL 16
 - **Shared:** `packages/shared` — constants and zod schemas shared by both apps
 - **Testing:** Vitest (API, real database), Playwright (e2e)
@@ -59,7 +59,7 @@ docs/           # project documentation
 
 ## Ground rules
 
-- JavaScript ES modules everywhere. No TypeScript, no Next.js, no Tailwind.
+- JavaScript ES modules everywhere.
 - Money is integer minor units with explicit `currency: "KES"`.
 - M-Pesa (Daraja) is the first payment integration. Until `MPESA_ENV` + credentials are set, payment initiation returns a truthful `503 MPESA_NOT_CONFIGURED` — never a fake success. Desk settlement works today.
 - `.env` is never committed; see `.env.example` for the key names.

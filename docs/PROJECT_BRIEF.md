@@ -13,7 +13,7 @@
 | 1 | Single-property hotel. No multi-tenancy, no multi-property platform. |
 | 2 | Brand: **The Stillhouse** — fictional Kenyan boutique property. |
 | 3 | Market: Kenya-first. KSh pricing, Kenya-ready architecture. M-Pesa Daraja is the **first** payment integration; card providers may follow. |
-| 4 | Frontend: React + Vite + **JavaScript (ES modules). No TypeScript.** |
+| 4 | Frontend: React + Vite + JavaScript (ES modules). |
 | 5 | Styling: plain CSS with design tokens per `DESIGN_SYSTEM.md` (canonical). Cormorant Garamond (display) + DM Sans (functional). No gradients/gold/glass. |
 | 6 | Animation: GSAP + ScrollTrigger, restrained, `prefers-reduced-motion` aware. |
 | 7 | Backend: Node.js + Express + Prisma + PostgreSQL. JavaScript ES modules. |

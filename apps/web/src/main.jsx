@@ -1,7 +1,4 @@
-/**
- * Vite entry point (for the exported, standalone build).
- * In the Next.js preview shell this file is not used — see src/app/SpaRoot.tsx.
- */
+/** App entry point. */
 import React from "react";
 import { createRoot } from "react-dom/client";
 import "./styles/index.css";
