@@ -28,5 +28,10 @@
   "devDependencies": {
     "supertest": "^7.1.4",
     "vitest": "^5.1.0"
+  },
+  "allowScripts": {
+    "prisma": true,
+    "@prisma/client": true,
+    "@prisma/engines": true
   }
 }

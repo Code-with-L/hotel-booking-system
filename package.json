@@ -33,5 +33,10 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "allowScripts": {
+    "prisma": true,
+    "@prisma/client": true,
+    "@prisma/engines": true
   }
 }
