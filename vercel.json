@@ -9,7 +9,7 @@
       "root": "apps/api",
       "framework": "express",
       "installCommand": "cd ../.. && npm ci --workspace=@stillhouse/api",
-      "buildCommand": "cd ../.. && npx prisma generate"
+      "buildCommand": "cd ../.. && PRISMA_CLIENT_ENGINE_TYPE=library npx prisma generate"
     }
   },
   "rewrites": [
