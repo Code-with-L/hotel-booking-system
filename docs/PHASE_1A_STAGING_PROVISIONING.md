@@ -116,22 +116,22 @@ Render services in the same workspace + same region share a private network. **I
 
 | Variable | `web` | `api` | Who sets | Source/Notes |
 |---|---|---|---|---|
-| `NODE_ENV` | ✓ (production) | ✓ (production) | OpenCode sets (Render UI) — **value constant** | boot guard requires production |
-| `PORT` | (unset or 10000) | (unset, api listens 4000 internally) | OpenCode sets (Render UI) | default 10000 if null; Render detects 8080/4000 usually — set deterministically |
+| `NODE_ENV` | ✓ (production) | ✓ (production) | Deploy session sets (Render UI) — **value constant** | boot guard requires production |
+| `PORT` | (unset or 10000) | (unset, api listens 4000 internally) | Deploy session sets (Render UI) | default 10000 if null; Render detects 8080/4000 usually — set deterministically |
 | `DATABASE_URL` | — | ✓ | **Leon types** (private internal host) | role `app`, `sslmode=require` |
 | `SESSION_SECRET` | — | ✓ (≥32 random bytes) | **Leon types** (openssl rand -hex 32) | rotate = session invalidation (documented) |
 | `WEB_ORIGIN` | — | ✓ `https://staging.thestillhouse.co.ke` | Leon types | must be HTTPS or boot refuses |
 | `FRONTEND_BASE_URL` | — | ✓ `https://staging.thestillhouse.co.ke` | Leon types | used by email links |
-| `COOKIE_SECURE` | — | ✓ `true` | OpenCode sets (Render UI) | boot-enforced |
-| `TRUST_PROXY` | — | ✓ `1` | OpenCode sets (Render UI) | one Render edge hop |
-| `RATE_LIMIT_WINDOW_MS` | — | default (900000) | OpenCode sets if override needed | 15min; leave defaults |
-| `RATE_LIMIT_MAX` | — | default (300) | OpenCode sets if override needed | defaults fine |
-| `AUTH_RATE_LIMIT_MAX` | — | default (10) | OpenCode sets if override needed | defaults fine |
-| `LOG_LEVEL` | — | `info` | OpenCode sets | prod default |
+| `COOKIE_SECURE` | — | ✓ `true` | Deploy session sets (Render UI) | boot-enforced |
+| `TRUST_PROXY` | — | ✓ `1` | Deploy session sets (Render UI) | one Render edge hop |
+| `RATE_LIMIT_WINDOW_MS` | — | default (900000) | Deploy session sets if override needed | 15min; leave defaults |
+| `RATE_LIMIT_MAX` | — | default (300) | Deploy session sets if override needed | defaults fine |
+| `AUTH_RATE_LIMIT_MAX` | — | default (10) | Deploy session sets if override needed | defaults fine |
+| `LOG_LEVEL` | — | `info` | Deploy session sets | prod default |
 | `MPESA_ENV` | — | `sandbox` | Leon types | **Stays sandbox** until 2.3 (comm §4) |
 | `MPESA_CONSUMER_KEY` | — | ✓ | **Leon types** | Daraja portal |
 | `MPESA_CONSUMER_SECRET` | — | ✓ | **Leon types** | Daraja portal |
-| `MPESA_SHORTCODE` | — | ✓ `174379` | OpenCode sets (Render UI) | sandbox test shortcode |
+| `MPESA_SHORTCODE` | — | ✓ `174379` | Deploy session sets (Render UI) | sandbox test shortcode |
 | `MPESA_PASSKEY` | — | ✓ | **Leon types** | Daraja sandbox passkey |
 | `MPESA_CALLBACK_URL` | — | ✓ `https://staging.thestillhouse.co.ke/api/v1/webhooks/mpesa` | Leon types | must be public HTTPS |
 | `MPESA_WEBHOOK_ALLOWED_IPS` | — | optional | Leon types if Safaricom publishes IPs | optional IP allowlist |
@@ -143,7 +143,7 @@ Render services in the same workspace + same region share a private network. **I
 | `EMAIL_SMTP_PASS` | — | ✓ | **Leon types** (same token) | Postmark server token |
 | `EMAIL_FROM` | — | ✓ `The Stillhouse <reservations@thestillhouse.co.ke>` | Leon types | after DNS verification |
 | `ADMIN_NOTIFICATION_EMAIL` | — | ✓ e.g. `frontdesk@staging.thestillhouse.co.ke` | Leon types | must be monitored |
-| `ETIMS_ENVIRONMENT` | — | `disabled` | OpenCode sets | `disabled`/`mock` only until certification |
+| `ETIMS_ENVIRONMENT` | — | `disabled` | Deploy session sets | `disabled`/`mock` only until certification |
 | `ETIMS_TIN` / `ETIMS_BRANCH_ID` / `ETIMS_DEVICE_SERIAL` / `ETIMS_BASE_URL` / `ETIMS_COMMUNICATION_KEY` / `ETIMS_SALES_INVOICE_PATH` | — | leave unset | **Leon types only if/when KRA-onboarded** | empty = disabled, truthful |
 | `SEED_ADMIN_EMAIL` | — | ✓ (staging only) | Leon types | used once for staging staff seed |
 | `SEED_ADMIN_PASSWORD` | — | ✓ (staging only) | **Leon types** random | staging staff seed only; prod via explicit env later |
@@ -151,7 +151,7 @@ Render services in the same workspace + same region share a private network. **I
 | `SEED_GUEST_EMAIL` | — | unused in prod | Leon types if desired | e2e fixture only in dev |
 | `SEED_GUEST_PASSWORD` | — | unused in prod | Leon types if desired | same |
 
-**Leon manually types:** all secrets (never in chat/OpenCode/git). **OpenCode sets in Render UI:** non-secret constants only (NODE_ENV, COOKIE_SECURE, TRUST_PROXY, MPESA_SHORTCODE, ETIMS_ENVIRONMENT, LOG_LEVEL, ports). Render UI access is Leon's account — OpenCode operates only at Leon's explicit direction, in his presence or via approved plan.
+**Leon manually types:** all secrets (never in chat/Deploy session/git). **Deploy session sets in Render UI:** non-secret constants only (NODE_ENV, COOKIE_SECURE, TRUST_PROXY, MPESA_SHORTCODE, ETIMS_ENVIRONMENT, LOG_LEVEL, ports). Render UI access is Leon's account — Deploy session operates only at Leon's explicit direction, in his presence or via approved plan.
 
 ## 7. Security checklist (before first public traffic)
 
@@ -213,19 +213,19 @@ Triggers: post-deploy smoke fails, migrations fail, `/ready` ≠ 200 for 5 minut
 4. **Verify:** health checks return 200; run the 16-check acceptance again; audit last 30 minutes of `/admin/audit-log`.
 5. **Post-mortem:** write 5-line incident note to `docs/reports/PHASE_1A_INCIDENT-<date>.md` (working tree only; not committed). Fields: trigger, time, action, outcome, prevention.
 
-## 11. Leon's manual actions (owner-gated; OpenCode may not touch)
+## 11. Leon's manual actions (owner-gated; deploy role may not touch)
 
 1. Register `thestillhouse.co.ke` (KeNIC registrar; if he already owns it, skip) — **and/or** decide DNS chain (registrar DNS vs Cloudflare)
 2. Create Render account (Hobby or Pro workspace — his choice; decision on Hobby 3d vs Pro 7d PITR)
-3. Create project `thestillhouse` + services `stillhouse-web` (Web), `stillhouse-api` (Private), `stillhouse-db` (PostgreSQL 16) in region **Frankfurt** — exact config per §2 (or dictate the values for OpenCode to click through under his supervision)
+3. Create project `thestillhouse` + services `stillhouse-web` (Web), `stillhouse-api` (Private), `stillhouse-db` (PostgreSQL 16) in region **Frankfurt** — exact config per §2 (or dictate the values for Deploy session to click through under his supervision)
 4. Add DNS records for `staging.thestillhouse.co.ke` (Type A/CNAME → Render)
-5. Enter **all** secret env values in Render UI — **never in chat, never in OpenCode prompts** (OPENAI_MCP_PLACEHOLDER violation)
+5. Enter **all** secret env values in Render UI — **never in chat, never in Deploy session prompts** 
 6. Approve Custom Domain in Render dashboard (Let's Encrypt issuance)
 7. Decide Hobby vs Pro workspace; approve Postmark plan; approve UptimeRobot plan (Free is sufficient)
 8. Approve `M-Pesa sandbox` credentials entry in Render UI
 9. Approve rollback drill execution + final go/no-go for first public run
 
-## 12. OpenCode's authorized actions (after Leon's explicit GO)
+## 12. Deploy session's authorized actions (after Leon's explicit GO)
 
 1. Create/adjust **only** documentation in repo; no code/config changes without separate Leon approval
 2. Update DNS verification, TLS checks, `staging-acceptance.mjs` runs, archived evidence

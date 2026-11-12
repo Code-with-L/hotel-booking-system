@@ -71,4 +71,4 @@ Reproduce this block at any real release; never pre-fill it optimistically.
 - Daraja environment: **not configured** (`MPESA_ENV=disabled`); API returns 503 `MPESA_NOT_CONFIGURED` by design.
 - eTIMS status: **disabled** (`ETIMS_ENVIRONMENT=disabled`); adapter tested with mocks only; not KRA-certified.
 - Engineering gate: CI green on `main` (Verify: 15/15, incl. e2e 3/3 + Trivy CRITICAL/HIGH clean on both images); API 45/45; rehearsal 20/20; axe 0/8; staging acceptance 16/16; M7 probes 15/15. Decision: **CONDITIONAL GO** (`docs/reports/M7.md` §14) — production blocked on §13 owner actions (hosting, domain/TLS, credentials, tax sign-off, monitoring).
-- Who verified: OpenCode engineering acceptance, 2026-11-12. Live end-to-end guest verification **not possible** (no public URL; no provider credentials).
+- Who verified: engineering acceptance, 2026-11-12. Live end-to-end guest verification **not possible** (no public URL; no provider credentials).

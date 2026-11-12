@@ -6,8 +6,8 @@
 - Small, reviewable commits; each commit compiles/passes tests for what it touches.
 - Tests before "done": unit (Vitest) → integration (API) → e2e (Playwright booking flow).
 - No fake success responses. No placeholder payment confirmations. No secrets in git.
-- `docs/` is the source of truth; AI assistants read it first and never silently expand scope.
-- The backend adapts to the accepted Arena frontend — never force-fit the frontend.
+- `docs/` is the source of truth; keep it current and never silently expand scope.
+- The backend adapts to the frontend — never force-fit the frontend.
 - No milestone begins while critical acceptance tests of earlier milestones fail.
 
 ## M2 stage detail (all 2026-11-11)
@@ -19,19 +19,19 @@
 - **M2-F Production deployment architecture ✅** Non-root API image; nginx SPA image with CSP + security headers; `docker-compose.prod.yml` reference; migration-on-release; rollback = redeploy previous tag (additive-only migrations); monitoring guidance; `DEPLOYMENT.md`; **backup restore drill performed** (`BACKUP_RESTORE.md`).
 - **M2-G Operational readiness ✅** Staff runbook (daily flow, desk settlement, reconciliation, refunds, blocks, rates, exits): `OPERATIONS.md`.
 
-Note: frontend design unchanged throughout M2 (Arena system intact; only service plumbing, loading states and small copy edits where functionality demanded).
+Note: frontend design unchanged throughout M2 (design system intact; only service plumbing, loading states and small copy edits where functionality demanded).
 
 ### M0 — Product specification ✅ (2026-11-11)
 Blueprint approved; repo flattened; docs committed.
 
-### M1 — Arena frontend + backend + integration ✅ (2026-11-11)
-Arena export accepted into `apps/web/`; Express/Prisma/PostgreSQL backend; allocation-ledger reservation engine; auth/RBAC; M-Pesa boundary + desk settlement; admin operations; API 17/17; e2e 3/3. Deviations per D-021…D-029 (Vite 6.4.6; Daraja deferred to owner registration; email deferred until M2; eTIMS deferred; booking fixtures dev-only).
+### M1 — frontend + backend + integration ✅ (2026-11-11)
+the frontend accepted into `apps/web/`; Express/Prisma/PostgreSQL backend; allocation-ledger reservation engine; auth/RBAC; M-Pesa boundary + desk settlement; admin operations; API 17/17; e2e 3/3. Deviations per D-021…D-029 (Vite 6.4.6; Daraja deferred to owner registration; email deferred until M2; eTIMS deferred; booking fixtures dev-only).
 
 ### M2 — Production readiness ✅ (2026-11-11, this milestone)
 Stages M2-A…M2-G above. Backend 20/20; e2e 3/3; both Docker images build; backup restore drill verified; measurement-backed performance work; all activation steps owner-gated and documented.
 
-### M3 - Arena experience refinement ✓ (2026-11-11)
-Visual pass on the guest-facing Arena experience (motion, navigation, mobile); no Arena redesign. Regression: API 20/20, e2e 3/3, build clean. See `docs/M3_VISUAL_REVIEW.md`.
+### M3 - Experience refinement ✓ (2026-11-11)
+Visual pass on the guest-facing experience (motion, navigation, mobile); no redesign. Regression: API 20/20, e2e 3/3, build clean. See `docs/M3_VISUAL_REVIEW.md`.
 
 ### M4 - Administrative Operations ✓ (2026-11-11, this milestone)
 Full operational maturity for the people who run the hotel: live dashboard (needs action, confirmed, payments summary, outstanding, cancellations 30d, occupancy/revenue), reservation workflow with paid-status badges and itemised pricing drawers (confirmed/cancel check-in/check-out with compare-and-swap transitions and audit in one tx), room + rate management with a hard no-override maintenance guard (409 + blocking references), room allocation history, guest CRM operational notes (audit-written), manager-only financial overview, receptionist+ history endpoint, audit-failure atomicity, concurrency hardening of allocation (`FOR UPDATE` + jittered backoff), and the M4 decision log. Backend 31/31 (8 consecutive clean runs), e2e 3/3, build clean, Docker Dockerfile set unchanged (verified M2). See `docs/reports/M4.md` and DECISIONS M4 block (D-035..D-040).
@@ -49,9 +49,9 @@ Independent acceptance re-verified without rebuilding M1-M6: guest/staff/managem
 **Commissioning sequence (owner-held):** host + managed PG16 (PITR) → domain + DNS + TLS → host secrets → tax sign-off → M-Pesa sandbox E2E → SMTP deliverability → (eTIMS track if fiscal in scope) → monitoring + runbook walkthrough → photography → production decision. Full checklist: `docs/FINAL_ACCEPTANCE.md` and `docs/reports/M7.md` §13.
 
 ## Open risks (register)
-- R1 — Arena output quality/deviation: mitigated by the staging gate; rejection criteria pre-agreed (HANDOFF_CHECKLIST §1–5).
+- R1 — frontend output quality/deviation: mitigated by the staging gate; mitigated by the staged gate; rejection criteria were pre-agreed.
 - R2 — Tax/levy correctness: provisional policy implemented (SC 10%, levy 2%, VAT 16% net). Owner/accountant sign-off still required before real launch (TAX_AND_CHARGES.md §4).
 - R3 — M-Pesa Daraja sandbox vs Go-Live credential lead time: registration should start now (ACTIVATE_MPESA.md), not after launch.
 - R4 — Stock imagery licensing: current photography cannot ship publicly; commission or license before the site goes live.
 - R5 — eTIMS: required for a real Kenyan trading property; not certified yet — decide launch scope accordingly (ACTIVATE_ETIMS.md).
-- R6 — Scope creep via Arena: Arena may invent routes/features; FRONTEND_MAP.md is the acceptance baseline.
+- R6 — Scope creep via frontend: frontend may invent routes/features; FRONTEND_MAP.md is the acceptance baseline.

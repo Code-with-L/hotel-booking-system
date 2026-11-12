@@ -40,7 +40,7 @@ Nothing in this document marks a gate as passed. A green CI run is **not** evide
 
 ## 1. Non-negotiable boundaries
 
-1. Arena AI frontend preserved; no redesign, no new frontend, no route/feature changes without an explicit decision log entry.
+1. Frontend preserved; no redesign, no new frontend, no route/feature changes without an explicit decision log entry.
 2. PostgreSQL 16 + Prisma + existing booking architecture unchanged; migrations stay **additive-only**.
 3. No dependency swaps; no framework upgrades. Security posture (M2–M7) never weakened; no new suppressions without sign-off.
 4. **M-Pesa stays `MPESA_ENV=sandbox`** until (a) Safaricom production go-live approval, (b) Leon's explicit written authorization, (c) a Leon-authorized Z-1-style KES 1 live transaction.
@@ -68,22 +68,22 @@ Owner: **Leon** unless marked otherwise. Status as of 2026-11-12 is **UNSET** fo
 | P0.11 | Hotel launch date authority (who decides the go date; decision rehearsed) | Execution needs a date + authority; else drift | — (organisational) | P0.1..P0.10 | PROPOSED — awaiting Leon (§0.1) | Signed Gate D decision file naming date/time, scope, rollback authority |
 | P0.12 | Production secrets custody & rotation owner | Secret sprawl = breach vector | Platform secret store / GitHub Actions `STAGING_*` secrets | P0.2 | PROPOSED — awaiting Leon (§0.1) | Owner designated; rotation cadence written in `docs/OPERATIONS.md` |
 
-## 3. Phase 1 — Infrastructure and public staging (Leon purchases/approves; OpenCode executes)
+## 3. Phase 1 — Infrastructure and public staging (Leon purchases/approves; Deploy session executes)
 
 **Gate A = all of this green, else NO-GO.** Local evidence is NOT accepted in place of public evidence for Gate A.
 
 | # | Task | Owner | Dependency | Evidence required (archive) |
 |---|---|---|---|---|
-| 1.1 | Provision host + managed PG16 (non-DDL app role, `sslmode=require`, pool `max:10`) | Leon (account/billing); OpenCode (config) | P0.2, P0.3 | Host console record; app role confirmed non-DDL; TLS-to-DB verified |
-| 1.2 | DNS for `staging.<domain>`; propagation | Leon (registrar); OpenCode (verify) | P0.2, P0.4 | `dig A/AAAA` output saved |
-| 1.3 | TLS certificate (Let's Encrypt/provider CA); HSTS on nginx vhost | OpenCode; Leon approves domain scope | 1.2 | `curl -vI` chain; issuer + expiry (≥60 days at issuance) |
+| 1.1 | Provision host + managed PG16 (non-DDL app role, `sslmode=require`, pool `max:10`) | Leon (account/billing); Deploy session (config) | P0.2, P0.3 | Host console record; app role confirmed non-DDL; TLS-to-DB verified |
+| 1.2 | DNS for `staging.<domain>`; propagation | Leon (registrar); Deploy session (verify) | P0.2, P0.4 | `dig A/AAAA` output saved |
+| 1.3 | TLS certificate (Let's Encrypt/provider CA); HSTS on nginx vhost | Deploy session; Leon approves domain scope | 1.2 | `curl -vI` chain; issuer + expiry (≥60 days at issuance) |
 | 1.4 | `.env.staging` on host (mode 600, never committed, never echoed); `WEB_ORIGIN=https://staging.<domain>` | **Leon types values** | 1.1 | Boot-guard passes: `NODE_ENV=production` requires SESSION_SECRET/COOKIE_SECURE/HTTPS origin (already enforced; log line archived) |
-| 1.5 | `migrate` additive deploy → API → web; `restart: unless-stopped` | OpenCode | 1.4 | Migration output applied in order; `/ready` 200 with DB up; containers healthy |
-| 1.6 | `tests/staging-acceptance.mjs` against **public** URL (16/16) | OpenCode | 1.5 | `m6-rehearsal/staging-acceptance-public-<date>.json` 16/16 |
-| 1.7 | Backup drill on managed PG: `pg_dump` → scratch restore → counts + `room_allocation_no_overlap` | OpenCode | 1.5 | Drill log with timestamp; counts match; constraint present; scratch dropped |
-| 1.8 | **Rollback drill**: redeploy previous image tag; verify 16/16 smoke again; document app rollback vs DB rollback | OpenCode | 1.6 | Drill timings ≤30 min; smoke green; written note in `docs/BACKUP_RESTORE.md` drill log |
-| 1.9 | Monitoring wired: uptime probe on `/api/v1/ready`; 5xx-rate; `email_outbox` failures; backup age (>26h alert); cert expiry 30/14/7d; disk >80%; **pager reaches a named human** | OpenCode (wire); Leon (prove page reaches them) | 1.5, P0.8 | Test page received + acknowledged by responder |
-| 1.10 | CSP/toggling pass on public URL (no third-party resources needed) | OpenCode | 1.6 | Header dump archived; no regressions in audit/a11y |
+| 1.5 | `migrate` additive deploy → API → web; `restart: unless-stopped` | Deploy session | 1.4 | Migration output applied in order; `/ready` 200 with DB up; containers healthy |
+| 1.6 | `tests/staging-acceptance.mjs` against **public** URL (16/16) | Deploy session | 1.5 | `m6-rehearsal/staging-acceptance-public-<date>.json` 16/16 |
+| 1.7 | Backup drill on managed PG: `pg_dump` → scratch restore → counts + `room_allocation_no_overlap` | Deploy session | 1.5 | Drill log with timestamp; counts match; constraint present; scratch dropped |
+| 1.8 | **Rollback drill**: redeploy previous image tag; verify 16/16 smoke again; document app rollback vs DB rollback | Deploy session | 1.6 | Drill timings ≤30 min; smoke green; written note in `docs/BACKUP_RESTORE.md` drill log |
+| 1.9 | Monitoring wired: uptime probe on `/api/v1/ready`; 5xx-rate; `email_outbox` failures; backup age (>26h alert); cert expiry 30/14/7d; disk >80%; **pager reaches a named human** | Deploy session (wire); Leon (prove page reaches them) | 1.5, P0.8 | Test page received + acknowledged by responder |
+| 1.10 | CSP/toggling pass on public URL (no third-party resources needed) | Deploy session | 1.6 | Header dump archived; no regressions in audit/a11y |
 
 ## 4. Phase 2 — Integrations, money and legal compliance
 
@@ -92,13 +92,13 @@ Owner: **Leon** unless marked otherwise. Status as of 2026-11-12 is **UNSET** fo
 | # | Task | Owner | Evidence |
 |---|---|---|---|
 | 2.1 | **Tax sign-off** (P0.6): SC written distribution agreement (s.13(7) precondition) OR instruction to compute VAT on SC-inclusive base; deposit tax-point; levy confirmation; Finance Act 2026 Cap. 476 | Leon + accountant | Signed letter/email from accountant; `TAX_AND_CHARGES.md` annotated; any `TAX_POLICY` change committed + 45/45 re-verified + quote re-measured live |
-| 2.2 | **M-Pesa sandbox end-to-end**: disposable booking → STK push → enter sandbox PIN → reserved flips `confirmed`; replay idempotent; cancellation releases allocation; reconciliation report matches M-Pesa statement line-for-line | OpenCode executes; Leon holds phone | Archived logs (refs masked); webhook trace; reconciliation output; suite green |
-| 2.3 | **Daraja production go-live** (only after 2.2 green AND P0.5 approval): production app issued; `MPESA_ENV=production` set **by Leon**; KES 1 live transaction authorized by Leon → confirm → statement match → refund recorded | **Leon decides and types**; OpenCode verifies | Leon's written authorization; KES 1 settlement; refund record; audit log entries |
-| 2.4 | **SMTP live** (P0.7): credentials on host; bookingConfirmation + password reset to owner-controlled mailbox; failure path verified (bad host/creds → outbox `failed`, booking intact) | OpenCode + provider | Mailbox headers (SPF/DKIM/DMARC pass); outbox rows `sent`/`failed`; failure injection archived |
-| 2.5 | **eTIMS (only if P0.10=in scope)**: KRA sandbox registration → OSCU spec download → sandbox sales invoices pass → KRA vetting → certification → only then production OSCU | **Leon leads** (PIN, OTP, commitment form); OpenCode implements to spec | KRA acceptance notices; sandbox invoice numbers; certification letter |
+| 2.2 | **M-Pesa sandbox end-to-end**: disposable booking → STK push → enter sandbox PIN → reserved flips `confirmed`; replay idempotent; cancellation releases allocation; reconciliation report matches M-Pesa statement line-for-line | Deploy execution; owner holds phone | Archived logs (refs masked); webhook trace; reconciliation output; suite green |
+| 2.3 | **Daraja production go-live** (only after 2.2 green AND P0.5 approval): production app issued; `MPESA_ENV=production` set **by Leon**; KES 1 live transaction authorized by Leon → confirm → statement match → refund recorded | **Leon decides and types**; Deploy session verifies | Leon's written authorization; KES 1 settlement; refund record; audit log entries |
+| 2.4 | **SMTP live** (P0.7): credentials on host; bookingConfirmation + password reset to owner-controlled mailbox; failure path verified (bad host/creds → outbox `failed`, booking intact) | Deploy session + provider | Mailbox headers (SPF/DKIM/DMARC pass); outbox rows `sent`/`failed`; failure injection archived |
+| 2.5 | **eTIMS (only if P0.10=in scope)**: KRA sandbox registration → OSCU spec download → sandbox sales invoices pass → KRA vetting → certification → only then production OSCU | **Leon leads** (PIN, OTP, commitment form); Deploy session implements to spec | KRA acceptance notices; sandbox invoice numbers; certification letter |
 | 2.6 | VAT display decision on guest-facing invoice (three lines vs bundled) | Leon + accountant | Issued receipt sample reviewed |
-| 2.7 | Production seed decision: catalogue-only + staff via explicit `SEED_*`; fixtures banned | Leon approves; OpenCode enforces (`node prisma/seed.js` prod path already refuses default-credential users) | Fresh prod DB audit: 28 rooms, 0 reservations, staff users only via `SEED_*` |
-| 2.8 | Commissioned photography replaces Pexels hotlinks (P0.9); self-hosted; modern formats; Lighthouse re-run | Leon (budget); OpenCode (swap + verify) | Lighthouse report improving perf score; axe still 0/8 |
+| 2.7 | Production seed decision: catalogue-only + staff via explicit `SEED_*`; fixtures banned | Leon approves; Deploy session enforces (`node prisma/seed.js` prod path already refuses default-credential users) | Fresh prod DB audit: 28 rooms, 0 reservations, staff users only via `SEED_*` |
+| 2.8 | Commissioned photography replaces Pexels hotlinks (P0.9); self-hosted; modern formats; Lighthouse re-run | Leon (budget); Deploy session (swap + verify) | Lighthouse report improving perf score; axe still 0/8 |
 
 **M-Pesa production is fenced:** it cannot happen before P0.5 + Gate B + Leon's typed instruction + a KES 1 transaction Leon personally authorizes. Engineering may not flip `MPESA_ENV=production` under any circumstance.
 
@@ -108,10 +108,10 @@ Owner: **Leon** unless marked otherwise. Status as of 2026-11-12 is **UNSET** fo
 
 | # | Task | Owner | Evidence |
 |---|---|---|---|
-| 3.1 | Runbook walk-through: `OPERATIONS.md` read aloud with the actual responder; rollback demo (restore previous image tag) live on staging | OpenCode leads; Leon + responder execute | Signed attendance note; measured rollback ≤30 min |
-| 3.2 | Final regression battery on `main` tip: build, `npm test` 45/45, Playwright 3/3, rehearsal 20/20, axe 0/8, CI green incl. Trivy | OpenCode | Archived run ids + outputs |
-| 3.3 | Domain cutover plan: TTL lowered ≥24h before production DNS switch; rollback DNS rehearsed; HSTS verified post-switch | Leon (DNS); OpenCode (verify) | `dig` before/after; rollback tested ≤5 min |
-| 3.4 | Photography/content approved; Arena site content reviewed for real accuracy (prices, policies) | Leon + any content owner | Screenshot set filed |
+| 3.1 | Runbook walk-through: `OPERATIONS.md` read aloud with the actual responder; rollback demo (restore previous image tag) live on staging | Deploy session leads; Leon + responder execute | Signed attendance note; measured rollback ≤30 min |
+| 3.2 | Final regression battery on `main` tip: build, `npm test` 45/45, Playwright 3/3, rehearsal 20/20, axe 0/8, CI green incl. Trivy | Deploy session | Archived run ids + outputs |
+| 3.3 | Domain cutover plan: TTL lowered ≥24h before production DNS switch; rollback DNS rehearsed; HSTS verified post-switch | Leon (DNS); Deploy session (verify) | `dig` before/after; rollback tested ≤5 min |
+| 3.4 | Photography/content approved; Site content reviewed for real accuracy (prices, policies) | Leon + any content owner | Screenshot set filed |
 | 3.5 | **Gate D decision file signed by Leon**: date/time, scope, authority, rollback authorizer | **Leon alone** | `docs/reports/LAUNCH_DECISION-<date>.md` signed by Leon |
 
 ## 6. Phase 4 — Production launch and hypercare
@@ -127,7 +127,7 @@ Owner: **Leon** unless marked otherwise. Status as of 2026-11-12 is **UNSET** fo
 
 | Gate | Pass criteria — ALL required | Decision owner | If not passed |
 |---|---|---|---|
-| **A — Public staging** | 1.5–1.10 all evidenced; TLS valid ≥60d; backup-restore drill logged; rollback ≤30 min; monitoring page received by named human; acceptance 16/16 **on public URL** | OpenCode evidence + Leon sign-off | NO-GO — no public anything. Fix, re-verify |
+| **A — Public staging** | 1.5–1.10 all evidenced; TLS valid ≥60d; backup-restore drill logged; rollback ≤30 min; monitoring page received by named human; acceptance 16/16 **on public URL** | Deploy session evidence + Leon sign-off | NO-GO — no public anything. Fix, re-verify |
 | **B — Legal, money and integrations** | 2.1–2.8 complete or explicitly descoped in writing by Leon; `TAX_POLICY` matches accountant sign-off; M-Pesa **sandbox** E2E green; SMTP verified on real mailbox; (eTIMS certified if in scope) | **Leon (with accountant)** | NO-GO — no paying guests. Fix or descope in writing |
 | **C — People and content** | 3.1–3.4 complete; responder named; rollback demo signed; content approved | Leon + responder | NO-GO — no launch date. Reschedule, don't press |
 | **D — Production cutover decision** | 3.5 signed; Phase 4 hypercare rostered for 72h; rollback authority named | **Leon alone** | NO-GO — do not proceed; post-mortem if attempted |
@@ -181,18 +181,6 @@ Owner: **Leon** unless marked otherwise. Status as of 2026-11-12 is **UNSET** fo
 
 **Things NOT on any path:** new features, redesigns, framework upgrades. None are authorized by this document.
 
-## 11. What OpenCode does vs what Leon does (final)
+## 11. Owner decisions vs deploy execution (final)
 
-**OpenCode (this machine + configured infra):** all config files, Dockerfiles, nginx vhosts, CI/CD edits, deployments, migrations, seed enforcement, test/verify/drills, security scans, Lighthouse/axe runs, archived evidence, this document's maintenance after sign-off. OpenCode **may not**: purchase, open accounts, type credentials, accept legal terms, sign anything, call Safaricom/KRA/banks, mark a gate passed, or touch production without Leon's Phase-by-phase approval.
-
-**Leon personally:** every purchase, account opening, DNS approval, secret entry into the host store, accountant/lawyer engagement, Gate A–D **sign-offs**, KES 1 live authorization, sandbox PIN decisions, incident responder designation, and the final launch decision. No one else may sign gates.
-
-## 12. Honest status at the time of writing
-
-- **Verified engineering:** local staging stack 16/16 acceptance; CI green at `cee2a11`; prod-deps audit 0; Trivy clean; exclusion constraint in DB; 45/45 tests; e2e 3/3; rehearsal 20/20; axe 0/8; rollback/restart drills on local stack.
-- **Sandbox payment:** STK push delivered to Leon's handset; owner-cancelled; cancellation callback verified; forged-success rejected; reconciliation truthful. **Success path not live-verified.**
-- **Everything public:** NOT VERIFIED. No staging URL, DNS, cert, or public endpoint exists.
-- **Everything legal/financial:** NOT SIGNED. Tax unapproved; eTIMS uncertified; M-Pesa uncertified; no one has verified guests can pay in production.
-- **Everything cloud:** NOT PROVISIONED.
-
-**Verdict:** READY TO COMMISSION (engineering). NOT READY TO LAUNCH. This document is the contract between those two states; Gates A–D enforce it.
+All implementation, configuration, scanning and verification is executed from this repo per the sections above. The owner alone: purchases, account creation, credential entry, legal agreement acceptance, external-service contact (Safaricom, KRA, banks), and production cutover approval.

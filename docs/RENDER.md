@@ -7,7 +7,7 @@
 
 | File | Change | Why |
 |---|---|---|
-| `apps/web/nginx.render.conf` | new nginx vhost. `listen 10000` (Render's default expected port); same security headers, CSP, SPA routing and `/healthz` as `nginx.conf`; `/api/` proxies via envsubst'd `${API_INTERNAL_HOST}` | Deterministic Render deployment without touching the Arena SPA or existing local/staging vhosts |
+| `apps/web/nginx.render.conf` | new nginx vhost. `listen 10000` (Render's default expected port); same security headers, CSP, SPA routing and `/healthz` as `nginx.conf`; `/api/` proxies via envsubst'd `${API_INTERNAL_HOST}` | Deterministic Render deployment without touching the SPA or existing local/staging vhosts |
 | `apps/web/Dockerfile` | `+ARG NGINX_CONF_DEST=/etc/nginx/conf.d/default.conf`; `COPY apps/web/${NGINX_CONF} ${NGINX_CONF_DEST}`; `EXPOSE 8080 10000` (informational) | Render build passes `NGINX_CONF_DEST=/etc/nginx/templates/default.conf.template`; stock nginx image envsubst's `API_INTERNAL_HOST` at container start (official templates mechanism). Default build args = unchanged behavior |
 
 **Backwards compatibility:** default `docker build -f apps/web/Dockerfile .` output identical to before (src → dest conf.d, EXPOSE informational). `nginx.staging.conf` untouched; local rehearsal path untouched.
@@ -28,7 +28,7 @@
 
 ## Verified in this workspace (2026-11-12)
 
-- Image build with Render args → success; `dist/` unchanged (2,187 modules; no Arena touch).
+- Image build with Render args → success; `dist/` unchanged (2,187 modules; no source change).
 - Container started with `API_INTERNAL_HOST=http://host.docker.internal:4000` + `NGINX_ENVSUBST_FILTER=API_INTERNAL_HOST`:
   - `/healthz` → 200; `/` → 200 (SPA shell served); `/api/v1/health` → dev API's own JSON through the nginx proxy (same-origin routing works end-to-end).
   - Rendered `default.conf` confirms only `API_INTERNAL_HOST` substituted (`proxy_pass http://host.docker.internal:4000;`), `listen 10000 default_server;`, security headers intact, `$host`, `$remote_addr` etc. untouched.

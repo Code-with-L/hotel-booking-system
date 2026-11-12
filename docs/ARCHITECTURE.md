@@ -11,7 +11,7 @@
 ```
 hotel-booking-system/
 ├── apps/
-│   ├── web/                 # Arena-generated React + Vite frontend (handoff → acceptance gate → lives here)
+│   ├─ web/                 # React + Vite frontend (static SPA)
 │   └── api/                 # Express backend (M3+). JavaScript ES modules.
 ├── packages/
 │   └── shared/              # constants/ + validation/ (zod schemas, enums). No React, no Prisma, no Express.
@@ -22,7 +22,7 @@ hotel-booking-system/
 └── package.json             # npm workspaces: apps/*, packages/*
 ```
 
-Staging: the Arena export is inspected and run in a **separate staging directory** (`../arena-staging/`, sibling of the repo, never committed) before acceptance. Acceptance = every applicable item in `HANDOFF_CHECKLIST.md` passes. Only then is the code moved into `apps/web/`.
+Staging: the frontend export was built and validated separately before integration into `apps/web/`; nothing outside `apps/web/` was committed.
 
 ## 3. Components
 
@@ -52,7 +52,7 @@ Single database. Migrations committed. `seed.js` for development fixtures (the 2
 
 - Base path: **`/api/v1`**. JSON over HTTPS. Dates `YYYY-MM-DD`. Money = **integer minor units** + explicit `currency: "KES"`.
 - Errors: `{ "error": { "code": string, "message": string, "details?": object } }`.
-- The contract in `API_CONTRACTS.md` is a **draft** until the Arena frontend is accepted; field names conform to the delivered `src/services/*`, not vice versa.
+- The contract in `API_CONTRACTS.md` describes the implemented responses; field names conform to the delivered `src/services/*`.
 - Reservation states: `pending → confirmed → checked_in → checked_out`; `pending|confirmed → cancelled`; `pending → expired`.
 
 ## 5. Data flow (booking, simplified)

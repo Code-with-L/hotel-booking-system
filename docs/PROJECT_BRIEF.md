@@ -18,10 +18,10 @@
 | 6 | Animation: GSAP + ScrollTrigger, restrained, `prefers-reduced-motion` aware. |
 | 7 | Backend: Node.js + Express + Prisma + PostgreSQL. JavaScript ES modules. |
 | 8 | Repository: `hotel-booking-system`, npm workspaces monorepo (modular monolith). No microservices. |
-| 9 | Workflow: **Arena.ai Code Arena generates the visual frontend.** OpenCode engineers the backend and performs integration. Arena output is staged, inspected and accepted against `HANDOFF_CHECKLIST.md` before entering `apps/web/`. |
+| 9 | Workflow: the visual frontend was produced separately and staged for review, then moved into `apps/web/` after review. The frontend is treated as the product; the backend adapts to it. |
 | 10 | Money: integer minor units with explicit `currency: "KES"`. |
 | 11 | API base path: `/api/v1`. |
-| 12 | The backend adapts to the accepted Arena frontend. The frontend is never redesigned to fit the backend without explicit approval. |
+| 12 | The backend adapts to the frontend. The frontend is never redesigned to fit the backend without explicit approval. |
 
 ## 3. The 28 rooms
 
@@ -57,6 +57,4 @@
 
 ## 7. Current state (2026-11-11)
 
-- M0 complete: documentation and repository hygiene only.
-- **No application source code exists.** The Arena-generated frontend has not been delivered. The backend has not been started. No database exists.
-- Remote repository `Code-with-L/hotel-booking-system` was empty at time of inspection.
+- Project started as documentation and repository hygiene, then grew into the working system. The codebase, fixtures and this README describe it as it exists now.

@@ -2,7 +2,7 @@
 
 **Prepared:** 2026-11-12 · **Baseline commit:** `cee2a11` (main, in sync) · **Status:** PROPOSED — blueprint only; nothing provisioned, nothing purchased.
 
-Evidence-backed plan for deploying the existing stack (Arena React/Vite SPA + Express/Prisma API + PostgreSQL 16) to Render with a `.co.ke` domain, Postmark email and UptimeRobot monitoring. **Architecture is preserved: same-origin SPA, nginx in front, private API, no new frontend, no new backend.**
+Evidence-backed plan for deploying the existing stack (React/Vite SPA + Express/Prisma API + PostgreSQL 16) to Render with a `.co.ke` domain, Postmark email and UptimeRobot monitoring. **Architecture is preserved: same-origin SPA, nginx in front, private API, no new frontend, no new backend.**
 
 ## 1. Architecture (Mermaid)
 
@@ -35,7 +35,7 @@ flowchart TB
 
 | Component | Image/tool | Source | Notes |
 |---|---|---|---|
-| Web (SPA + TLS + /api proxy) | `apps/web/Dockerfile`, nginx 1.29-alpine, `NGINX_CONF=nginx.conf` | repo | public Web Service; `/healthz` internal probe; serves Arena build from `dist/` |
+| Web (SPA + TLS + /api proxy) | `apps/web/Dockerfile`, nginx 1.29-alpine, `NGINX_CONF=nginx.conf` | repo | public Web Service; `/healthz` internal probe; serves the SPA build from `dist/` |
 | API | `apps/api/Dockerfile`, node:22-alpine, non-root `:4000` | repo | private service; `/api/v1/ready` for Render healthcheck |
 | Database | Render PostgreSQL 16 (Private networking) | provider | non-DDL app role; PITR; daily backups |
 | Migrations | `prisma/migrations/*` via `node node_modules/prisma/build/index.js migrate deploy` (container CMD pattern; **npx removed from image**) | repo | run BEFORE API rollover (CI deploy step already does this pattern; `docker-compose.staging.yml` `migrate` service is the reference) |
@@ -120,12 +120,12 @@ Reuse `.github/workflows/ci.yml` unchanged as the verify gate. Add a **deploy** 
 | **Estimated total** | **≈ US$59/mo (Hobby) ≈ KES 7,700** | or ≈ US$84/mo (Pro) ≈ KES 10,900; FX ≈ 129.97 |
 
 **Scaling triggers:** API CPU >70% sustained → step to 1c-2g→2g; API memory >80% → bump tier; PG connections >60 → review pool sizing (not scale instance blindly); 5xx-rate alert → investigate before scaling.
-**Op responsibilities:** Leon (billing, DNS, secrets rotation, launch call); OpenCode (config, deployments, drills, docs). No on-call contract exists — UptimeRobot pages whoever Leon names.
+**Op responsibilities:** Leon (billing, DNS, secrets rotation, launch call); deployment and verification per this blueprint. No on-call contract exists — UptimeRobot pages whoever Leon names.
 
-## 8. Owner actions vs OpenCode actions
+## 8. Owner actions vs deployment actions
 
 **Leon (and only Leon):** approve Render project creation; enter secret values into Render env (this document never sees them); create Render Postgres; register `staging.<domain>` in KeNIC registrar + set DNS at registrar; approve custom domain; flip `STAGING_DEPLOY_ENABLED=true`; create Deploy Hook in Render; choose Postmark plan; decide workspace Hobby vs Pro; verify restore drill result; authorize first public cutover; hold Daraja credentials.
-**OpenCode:** all configs (vhost paths if needed, `render.yaml` if owner wants IaC later — not required), deploys, migrate job, acceptance suite runs, drills, security scans, documentation, issue fixes, verification reports against the **public** URL (never localhost-only).
+**Deployment session:** all configs (vhost paths if needed, `render.yaml` if owner wants IaC later — not required), deploys, migrate job, acceptance suite runs, drills, security scans, documentation, issue fixes, verification reports against the **public** URL (never localhost-only).
 
 ## 9. Risks and unresolved decisions
 

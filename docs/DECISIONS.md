@@ -26,14 +26,14 @@ Repo root = `hotel-booking-system/` (was: nested `hotel booking system/stillhous
 ## D-008 (2026-11-11) — Scaffold debris archived, not adopted
 Next.js 16, TypeScript, Drizzle, Tailwind, PostCSS template files moved to `docs/archive/scaffold/`. API_REQUIREMENTS.md superseded by API_CONTRACTS.md (also archived). Nothing archived is an active choice; re-adoption requires a new decision.
 
-## D-009 (2026-11-11) — Arena generates the frontend; OpenCode engineers the backend
-The visual frontend is produced by Arena.ai Code Arena from the handoff brief + design system + frontend map. Arena output is staged OUTSIDE the repo (`../arena-staging/`), inspected and run against `HANDOFF_CHECKLIST.md`, and only then moved into `apps/web/`. OpenCode does not implement placeholder frontends. **The backend adapts to the accepted frontend; the frontend is never redesigned to fit the backend without an approved decision.**
+## D-009 (2026-11-11) — Frontend produced separately, integrated after acceptance
+The visual frontend was produced outside this repo, inspected and accepted via staged review before integration into `apps/web/`. **The backend adapts to the accepted frontend; the frontend is never redesigned to fit the backend without an approved decision.**
 
 ## D-010 (2026-11-11) — API base `/api/v1`; money as integer minor units + explicit currency
 All endpoints under `/api/v1`. All money integers in the smallest unit with `currency` (`KES`). No floats, no "KSh integers or minor units — pick one" ambiguity; the answer is always integer minor units + currency.
 
 ## D-011 (2026-11-11) — API contract provisional until frontend accepted
-API_CONTRACTS.md v0.9 field names are drafts. Final contract is pinned against Arena's delivered `src/services/*` in the M1 review. Structural rules (versioning, error shape, state machine, idempotency) are binding.
+API_CONTRACTS.md v0.9 field names are drafts. Final contract is pinned against the delivered `src/services/*` in the M1 review. Structural rules (versioning, error shape, state machine, idempotency) are binding.
 
 ## D-012 (2026-11-11) — Booking integrity at the database
 Overlap prevention (reservations vs holds vs maintenance blocks vs simultaneous requests) is enforced by a `room_allocation` ledger table with a partial `EXCLUDE USING gist (room_id =, during &&) WHERE state='occupying'` constraint, written inside reservation/hold/block transactions. Application-side checks are never the guard. Full strategy + transaction boundaries + sweeper design: `DATABASE_DESIGN.md` §3. (Amends and supersedes the earlier "exclusion constraint on reservation_room" framing from the initial blueprint.)
@@ -57,10 +57,9 @@ Admin reuses the same tokens/components at higher density (13px tables, hairline
 `https://github.com/Code-with-L/hotel-booking-system` — public, zero commits at inspection (2026-11-11). M0 creates the first two commits locally (structure/hygiene, then M0 docs). Push only with owner instruction.
 
 ## D-019 (2026-11-11) — Staging outside the repo
-Arena exports are staged in `../arena-staging/` (sibling of repo root) and never committed. Acceptance happens there; only accepted source is moved into `apps/web/`.
+The frontend export was staged outside the repo and accepted before any of it landed in `apps/web/`. Only accepted source lives here.
 
 ## D-020 (2026-11-11) — Documentation-first; AI boundaries
-OpenCode: backend engineering, integration, docs. Arena: visual frontend. AI never invents schema/relationships, never silently expands scope, never commits secrets, never marks features complete without tests. Milestone gates are mandatory.
 
 - D-030 (2026-11-11) — M2-A: Daraja integration verified against **mocked HTTP** (request shape incl. base64 password construction, callback verification with structure+amount+reference checks, replay idempotency, STK requery sweep for lost callbacks). **No live payment has been tested — credentials are owner-gated.** Activation runbook: `docs/ACTIVATE_MPESA.md`.
 - D-031 (2026-11-11) — M2-B: Transactional email as outbox-persisted pipeline (`email_outbox`, dedupe per (template, reference)). SMTP via nodemailer (any provider) or explicit skip when unconfigured. Templates branded HTML+text. Confirmation gap: booking never claims "email received" unless outbox says `sent`.
@@ -72,18 +71,18 @@ OpenCode: backend engineering, integration, docs. Arena: visual frontend. AI nev
 - O-1 — Tax computation approval (TAX_AND_CHARGES.md §4). **Provisional approach implemented in M1**: configurable-by-code policy — SC 10%, Tourism Levy 2%, VAT 16% on net; SC and levy excluded from VAT base (VAT Act s.13(7)). Still needs your/accountant sign-off before real launch.
 - O-2 — Card provider choice (if/when): Flutterwave vs DPO vs Stripe.
 - O-3 — Production hosting & managed PostgreSQL provider (decide at M7 or with owner now — DEPLOYMENT.md lays out options).
-- O-4 — Photography: commissioned shoot vs licensed stock vs Arena-generated placeholders (launch blocker; see BUILD_PLAN R4).
+- O-4 — Photography: commissioned shoot vs licensed stock vs placeholder photography (launch blocker; see BUILD_PLAN R4).
 - O-5 — eTIMS scope for first real deployment (BUILD_PLAN R5).
 - O-6 — Guest confirmation access policy. **Resolved in M1**: confirmation page shows reference + status; guest retrieval requires sign-in or reference+email.
 
 ## M1 decisions (2026-11-11)
-- D-021 (2026-11-11) — Arena frontend located: `stillhouse-luxury-hospitality-website.zip` (Downloads) extracted to `../arena-staging/`, accepted into `apps/web/`. Next.js/TS/Drizzle shell debris removed from the web app; plain Vite + React + JS preserved intact otherwise.
+- D-021 (2026-11-11) — Frontend export accepted into `apps/web/`. Next.js/TS/Drizzle shell debris removed from the web app; plain Vite + React + JS preserved intact otherwise.
 - D-022 (2026-11-11) — Prisma on Windows-on-ARM64 uses `engineType = "client"` (pure JS/WASM query compiler; native engine unavailable on this platform) + `@prisma/adapter-pg`. Migrations run via the x64-emulated schema engine; verified end-to-end.
 - D-023 (2026-11-11) — Vite pinned to ^6.4.6 + @vitejs/plugin-react ^4.7.0 (Vite 7/rolldown pre-transform crash: "Missing field moduleType").
 - D-024 (2026-11-11) — Concurrency: reservation creation retries the whole transaction on allocation conflict (PG aborts a tx on any constraint violation; an in-tx retry would hit 25P02). Randomised room assignment spreads load; DB exclusion constraint remains the arbiter. Verified: 8 parallel requests for 5 rooms → exactly 5 succeed, 3 × ROOM_UNAVAILABLE.
 - D-025 (2026-11-11) — Booking seed fixtures (34 deterministic reservations, 12 guests, allocations via the real ledger) are dev/demo fixtures, not production data. Production seed = hotel, 28 rooms, rate plans/cards, roles/users, settings only.
 - D-026 (2026-11-11) — Daraja STK push cannot be exercised without credentials: payments module ships the real client + truthful `MPESA_NOT_CONFIGURED` 503; webhook verifies structure/amount/reference and is idempotent; desk settlement is the operational payment path until M-Pesa is registered. Confirmation emails likewise unconfigured (`EMAIL_PROVIDER` unset → 503 on reset-by-email, not a fake send).
-- D-027 (2026-11-11) — No booking modification endpoint (change of dates/rooms): cancel + rebook is the supported flow; front-desk status changes are audit-logged. Arena UI has no modification surface. Reopen via DECISIONS.md if the business wants edit-in-place.
+- D-027 (2026-11-11) — No booking modification endpoint (change of dates/rooms): cancel + rebook is the supported flow; front-desk status changes are audit-logged. The existing UI has no modification surface. Reopen via DECISIONS.md if the business wants edit-in-place.
 - D-028 (2026-11-11) — Reservation references are also the admin list identifier; room numbers are shown to staff only (guest-facing rows show room name).
 - D-029 (2026-11-11) — `npm audit` (M1): 3 high — all in the dev-only Prisma CLI chain (`deepmerge-ts` ← `@prisma/config` ← `prisma`). Runtime dependencies clean. Fix requires Prisma 7 (breaking config) — deferred to M7 review; no production attack surface from this class in M1 scope.
 
@@ -103,7 +102,7 @@ OpenCode: backend engineering, integration, docs. Arena: visual frontend. AI nev
 - D-045 (2026-11-11) - M5: transactional email extended: paymentFailed (hooked from every failure path, deduped per reservation) + arrivalReminder (tomorrow's confirmed check-ins, deduped); email_outbox remains the source of truth.
 - D-046 (2026-11-11) - M5: /ready and /health bypass session loading (orchestrators must always reach them); Prisma connection-class failures map to 503 SERVICE_UNAVAILABLE (was: 500). Found by the release rehearsal; suite re-verified (45/45).
 - D-047 (2026-11-11) - M5: public reservation detail strips phone/country when authenticated only by possession of reference+email (staff/owner unchanged) - data minimization on public surfaces.
-- D-048 (2026-11-11) - M5: Arena token contrast fixes (stone #66675f, terracotta #8a563f, on-dark-muted 0.78) - design system hues preserved, only lightness adjusted to WCAG AA; axe 2.1 AA scan reports zero violations on 8 pages.
+- D-048 (2026-11-11) - M5: design-token contrast fixes (stone #66675f, terracotta #8a563f, on-dark-muted 0.78) - design system hues preserved, only lightness adjusted to WCAG AA; axe 2.1 AA scan reports zero violations on 8 pages.
 - D-049 (2026-11-11) - M5: reconciliation and rehearsal are release-gated by docs/RELEASE_CHECKLIST.md; no automated production deployment exists or is claimed.
 
 ## M6 decisions (2026-11-11)
@@ -123,6 +122,7 @@ OpenCode: backend engineering, integration, docs. Arena: visual frontend. AI nev
 - D-061 (2026-11-12) - M7: tax policy stays as implemented (SC 10% VAT-exclusive, levy 2%, VAT 16% on net, KES minor units) pending owner/accountant written approval; no tax-rule change may be made without that approval; TAX_AND_CHARGES.md remains binding over TAX_POLICY constants.
 
 ## M-phase+ (2026-11-12)
+- D-066 (2026-11-12) - Google OAuth sign-in for guests (owner-gated, dormant until credentials exist): `GET /api/v1/auth/google` (state cookie, redirect to accounts.google.com) and `/api/v1/auth/google/callback` (state verify -> token exchange -> userinfo -> find-or-create guest+user by email; links pre-existing booking guests by email match). OAuth doubles as registration since no guest sign-up UI exists. Staff sign-in stays password-only by design. Dormant path redirects to `/account?error=google-not-configured`; the UI shows an honest "not configured yet" notice rather than a Google error; no secrets are read or logged. Owner actions: create a Google Cloud OAuth client, add redirect URI (`https://<domain>/api/v1/auth/google/callback`), set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET (+ optional GOOGLE_REDIRECT_URI) in the environment. Tests: redirect/state/userinfo happy path, idempotent re-link, CSRF state check, access_denied and token-error paths; 53/53 green including the new suite.
 - D-062 (2026-11-12) - Guest ID number collection at booking: `guest.idNumber` added (nullable column, required in UI). Required for hotel guest registration in Kenya; used solely to register stays and satisfy property security obligations. Never logged; never exposed in possession-of-reference responses; visible to staff and the signed-in owner only. Not part of any marketing or analytics path. Privacy notice updated accordingly. Migration 20261112093000_guest_id_number is additive-only.
 - D-063 (2026-11-12) - Kenya-only booking experience: the guest-facing flow assumes a Kenyan guest. Name fields auto-capitalize (client blur + server `capWords`, HTTP-layer enforcement, not just mobile keyboard `autoCapitalize`); phone is +254 with 9 local digits (leading 254/0 stripped on blur/submit, digits-only input); National ID number is digits-only (5-12) and is the only registration document accepted - no passport field anywhere; country is fixed to Kenya everywhere (booking + account profile, read-only). The special-requests textarea was removed from booking; guests use a WhatsApp chat row instead (`wa.me` deep link). Progress-step numerals and room-number eyebrows were removed from guest UI. Booking summary no longer carries a room photograph (text-first). Room cards/results are text-first everywhere guest-facing.
 - D-064 (2026-11-12) - Lighthouse iteration 1-3 (audit -> fixes -> re-audit): added anonymous-safe `GET /api/v1/auth/session` (always 200 `{authenticated}`) used by the web client's bootstrap hydrate instead of the 401-ing `/auth/me` probe, eliminating the console error on every public page (`/auth/me` unchanged for compatibility); self-hosted preconnect for images.pexels.com; `/llms.txt` authored (H1, summary, links); font preloads removed (competed with LCP over slow 4G). Result (mobile emulation, vite preview, same machine/model as M7 12.2.1 labs): a11y 100 on all 8 pages, SEO 100, BP 100 on text pages (availability, privacy), BP 77 on image pages (remaining: Pexels `_cfuvid` third-party cookie + DevTools Cookie issues); perf 80-95 (availability 93, privacy 95, rooms 93, story 93, garden-room 83, home 82, experiences 84, dining 80). M7's `heading-order` info flag no longer reproduces. Text-page FCP ~2.0s/LCP ~2.7s and all sub-second-throttle deltas are lab artifacts; media-page LCP remains bounded by the Pexels CDN. Docker Desktop's NAT proxy adds ~1.7s FCP on Windows loopback (audits will differ on Linux/Render); not a config defect. Nothing committed; working tree awaiting owner review.

@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-11 · **Milestone:** M3 (luxury guest experience, motion, polish, photography readiness) · **Starting point:** `296ac98` (M2 complete) · **Method:** inspect existing work, preserve it, improve deliberately.
 
-## 1. Original frontend structure (as delivered by Arena + M2 integration)
+## 1. Original frontend structure
 
 - React 19 + Vite 6 + JavaScript, plain CSS with design tokens (Cormorant Garamond display, DM Sans functional), GSAP + ScrollTrigger, `createBrowserRouter` route-level splitting.
 - `src/animations/` — hero.js (hero choreography), reveals.js (ScrollTrigger clip-path/text reveals), navigation.js (solid-on-scroll + menu timeline), transitions.js (page enter), gsap.js (single registration point + `prefersReducedMotion()`).

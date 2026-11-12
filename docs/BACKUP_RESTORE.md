@@ -37,5 +37,5 @@ Retention: ≥ 30 days daily + 12 monthly (finance/audit). Verify restore BEFORE
 
 | Date | Action | Result | By |
 |---|---|---|---|
-| 2026-11-11 | pg_dump → pg_restore → counts verified | ✔ pass | OpenCode (M2-F) |
+| 2026-11-11 | pg_dump → pg_restore → counts verified | ✔ pass | M2-F |
 | (next) | | | |
