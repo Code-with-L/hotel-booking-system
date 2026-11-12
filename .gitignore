@@ -14,7 +14,7 @@ Thumbs.db
 *.tsbuildinfo
 playwright-report/
 test-results/
-arena-staging/
+web-scratch
 
 # Local staging TLS material (private keys never committed)
 deploy/certs/

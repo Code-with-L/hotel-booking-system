@@ -9,4 +9,4 @@ test-results
 .env
 .env.*
 !.env.example
-arena-staging
+web-scratch
