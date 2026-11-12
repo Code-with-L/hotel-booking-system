@@ -8,7 +8,8 @@
     "api": {
       "root": "apps/api",
       "framework": "express",
-      "installCommand": "cd ../.. && npm ci --workspace=@stillhouse/api"
+      "installCommand": "cd ../.. && npm ci --workspace=@stillhouse/api",
+      "buildCommand": "cd ../.. && npx prisma generate"
     }
   },
   "rewrites": [
