@@ -688,7 +688,7 @@ adminRouter.get('/admin/reports/payment-health', requireRole('manager', 'admin')
       invoiceFailed, invoicePendingStale, succeededVsAttemptsRows, refundByReservation,
     ] = await Promise.all([
       prisma.$queryRaw`SELECT "providerReference", count(*)::int AS n FROM payment_attempt
-        WHERE "providerReference" IS NOT NULL GROUP BY "providerReference" HAVING count(*) > 1`,
+        WHERE "providerReference" IS NOT NULL GROUP BY "providerReference" HAVING count(*) > 2`,
       prisma.payment.findMany({
         where: { provider: 'mpesa', status: 'pending', createdAt: { lt: minus45m } },
         select: { id: true, providerReference: true, createdAt: true, reservation: { select: { reference: true } } },
