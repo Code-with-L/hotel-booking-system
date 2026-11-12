@@ -23,8 +23,8 @@ Editorial/architectural hospitality. Warm ivory/limestone, ink, muted stone, res
 ## D-007 (2026-11-11) — Flatten repository
 Repo root = `hotel-booking-system/` (was: nested `hotel booking system/stillhouse-luxury-hospitality-website/`). npm workspaces: `apps/web`, `apps/api`, `packages/shared`, root `prisma/`, `tests/`, `docs/`.
 
-## D-008 (2026-11-11) — Scaffold debris archived, not adopted
-The original template scaffold was rejected; its files are archived at `docs/archive/scaffold/`. API_REQUIREMENTS.md superseded by API_CONTRACTS.md (also archived). Nothing archived is an active choice; re-adoption requires a new decision.
+## D-008 (2026-11-11) - Scaffold debris removed, not adopted
+The original template scaffold was rejected; its files were deleted. API_REQUIREMENTS.md shipped alongside it and was likewise discarded. The delivered system is the product. Re-adoption of discarded pieces requires a new decision.
 
 ## D-009 (2026-11-11) — Frontend produced separately, integrated after acceptance
 The visual frontend was produced outside this repo, inspected and accepted via staged review before integration into `apps/web/`. **The backend adapts to the accepted frontend; the frontend is never redesigned to fit the backend without an approved decision.**
