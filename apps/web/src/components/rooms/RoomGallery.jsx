@@ -68,7 +68,7 @@ export default function RoomGallery({ photos, name }) {
       <div className="gallery__thumbs">
         {photos.map((p, i) => (
           <button key={p.id} className={i === index ? "is-active" : ""} onClick={() => go(i)} aria-label={`Show image ${i + 1}: ${p.alt}`} aria-current={i === index}>
-            <img src={photoUrl(p, 400)} alt="" loading="lazy" />
+            <img src={photoUrl(p, 480)} alt="" loading="lazy" />
           </button>
         ))}
       </div>

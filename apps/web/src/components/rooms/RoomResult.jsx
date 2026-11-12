@@ -1,35 +1,25 @@
 import { Link } from "react-router-dom";
 import Button from "@/components/ui/Button.jsx";
-import Media from "@/components/ui/Media.jsx";
 import { formatKsh, pluralise } from "@/utils/format.js";
 
-/** One room type in the availability results, with its rate plans. */
+/** One room type in the availability results - text-first; the photo lives on the room detail page. */
 export default function RoomResult({ result, nights, onSelect }) {
   const { room, plans, available, reason } = result;
   return (
-    <article className={`result${available ? "" : " is-unavailable"}`}>
-      <div className="result__image">
-        <Media photo={room.hero} ratio="4 / 3" reveal={false} zoom sizes="(min-width: 1025px) 34vw, 100vw" />
-      </div>
+    <article className={`result result--compact${available ? "" : " is-unavailable"}`}>
       <div className="result__main">
         <header className="result__head">
-          <p className="eyebrow eyebrow--terra">
-            {room.number} — {room.name.toUpperCase()}
-          </p>
+          <p className="eyebrow eyebrow--terra">{room.name.toUpperCase()}</p>
           <h2 className="h-lg">{room.name}</h2>
-          <p className="body">{room.summary}</p>
+          <p className="body">{room.tagline}</p>
           <ul className="result__meta">
             <li>{room.occupancy.label}</li>
             <li>{room.size} m²</li>
             <li>{room.bed}</li>
-          </ul>
-          <ul className="result__features">
-            {room.features.slice(0, 3).map((f) => (
-              <li key={f}>{f}</li>
-            ))}
+            <li>{room.view}</li>
           </ul>
           <Link className="link-arrow" to={`/rooms/${room.slug}`}>
-            <span>Room details</span>
+            <span>See room</span>
           </Link>
         </header>
 
@@ -52,9 +42,9 @@ export default function RoomResult({ result, nights, onSelect }) {
                 <Button
                   onClick={() => onSelect(room, plan, nightly)}
                   variant={plan.id === "flexible" ? "solid" : "outline"}
-                  aria-label={`Select ${room.name}, ${plan.name}`}
+                  aria-label={`Book now: ${room.name}, ${plan.name}`}
                 >
-                  Select room
+                  Book now
                 </Button>
               </div>
             ))}

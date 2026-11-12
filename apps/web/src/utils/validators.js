@@ -1,5 +1,4 @@
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const PHONE_RE = /^[+()\d][\d\s().-]{6,}$/;
 
 export const isEmail = (v) => EMAIL_RE.test((v || "").trim());
 
@@ -9,9 +8,10 @@ export function validateGuest(values) {
   if (!values.lastName?.trim()) e.lastName = "Please enter your last name.";
   if (!values.email?.trim()) e.email = "Please enter your email address.";
   else if (!isEmail(values.email)) e.email = "That email address doesn't look right.";
-  if (!values.phone?.trim()) e.phone = "Please enter a phone number.";
-  else if (!PHONE_RE.test(values.phone.trim())) e.phone = "Use digits, spaces and an optional leading +.";
-  if (!values.country) e.country = "Please choose your country.";
+  if (!values.idNumber?.trim()) e.idNumber = "Please enter your national ID number.";
+  else if (!/^\d{5,12}$/.test(values.idNumber.trim())) e.idNumber = "National ID is digits only (5-12).";
+  if (!values.phone?.trim()) e.phone = "Please enter your phone number (9 digits).";
+  else if (!/^\d{9}$/.test(values.phone.replace(/\D/g, ""))) e.phone = "Kenyan numbers only — enter the 9 digits after the country code.";
   if (values.requests && values.requests.length > 600) e.requests = "Please keep requests under 600 characters.";
   if (!values.privacy) e.privacy = "Please acknowledge the privacy notice to continue.";
   return e;

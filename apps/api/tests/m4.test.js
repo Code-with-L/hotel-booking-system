@@ -17,7 +17,7 @@ const createBooking = (agent, overrides = {}) =>
     .send({
       roomTypeSlug: 'garden-room', ratePlanKey: 'flexible',
       checkIn: '2027-09-01', checkOut: '2027-09-03', adults: 2, children: 0, rooms: 1,
-      guest: { firstName: 'M4', lastName: 'Test', email: GUEST_CREDS.email, phone: '+254 712 000 042', country: 'Kenya', requests: '', privacy: true, ...(overrides.guest || {}) },
+      guest: { firstName: 'M4', lastName: 'Test', email: GUEST_CREDS.email, phone: '+254 712 000 042', idNumber: '22334455', country: 'Kenya', requests: '', privacy: true, ...(overrides.guest || {}) },
       ...overrides,
     });
 
@@ -247,7 +247,7 @@ describe('M4 reservation search', () => {
 
   it('q filters by reference and guest name', async () => {
     const agent = request.agent(app);
-    const created = await createBooking(agent, { checkIn: '2027-11-01', checkOut: '2027-11-03', guest: { firstName: 'Zebra', lastName: 'Unique', email: 'zebra.unique@example.com', phone: '+254 712 000 111', country: 'Kenya', requests: '', privacy: true } });
+    const created = await createBooking(agent, { checkIn: '2027-11-01', checkOut: '2027-11-03', guest: { firstName: 'Zebra', lastName: 'Unique', email: 'zebra.unique@example.com', phone: '+254 712 000 111', idNumber: '66778899', country: 'Kenya', requests: '', privacy: true } });
     const ref = created.body.reference;
     const staff = request.agent(app);
     await signIn(staff, ADMIN_CREDS);

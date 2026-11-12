@@ -125,7 +125,7 @@ export default function BookingReview() {
 
             <div className="form-actions">
               <Button to="/booking/guest-details" variant="text">Back</Button>
-              <Button arrow onClick={submit} disabled={busy || !quote}>{busy ? "Confirming reservation." : "Confirm reservation"}</Button>
+              <Button arrow onClick={submit} disabled={busy || !quote}>{busy ? "Confirming..." : "Proceed to payment"}</Button>
             </div>
           </div>
 

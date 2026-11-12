@@ -46,7 +46,7 @@ const createBooking = (agent, overrides = {}) =>
     .send({
       roomTypeSlug: 'garden-room', ratePlanKey: 'flexible',
       checkIn: '2027-12-01', checkOut: '2027-12-03', adults: 2, children: 0, rooms: 1,
-      guest: { firstName: 'M5', lastName: 'Test', email: GUEST_CREDS.email, phone: '254712000042', country: 'Kenya', requests: '', privacy: true, ...(overrides.guest || {}) },
+      guest: { firstName: 'M5', lastName: 'Test', email: GUEST_CREDS.email, phone: '254712000042', idNumber: '11223344', country: 'Kenya', requests: '', privacy: true, ...(overrides.guest || {}) },
       ...overrides,
     });
 const sql = async (q, params) => {

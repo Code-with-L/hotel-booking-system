@@ -64,7 +64,7 @@ const createPendingBooking = async (agent) => {
       ratePlanKey: 'flexible',
       checkIn: '2027-07-05', checkOut: '2027-07-08',
       adults: 2, children: 0, rooms: 1,
-      guest: { firstName: 'Mpesa', lastName: 'Test', email: GUEST_CREDS.email, phone: '+254 712 000 042', country: 'Kenya', requests: '', privacy: true },
+      guest: { firstName: 'Mpesa', lastName: 'Test', email: GUEST_CREDS.email, phone: '+254 712 000 042', idNumber: '33445566', country: 'Kenya', requests: '', privacy: true },
     });
   expect(res.status).toBe(201);
   return res.body;

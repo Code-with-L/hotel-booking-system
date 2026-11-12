@@ -23,7 +23,7 @@ const createBooking = (agent, overrides = {}) =>
       source: 'web',
       guest: {
         firstName: 'Test', lastName: 'Guest', email: GUEST_CREDS.email,
-        phone: '+254 712 345 678', country: 'Kenya', requests: '', privacy: true,
+        phone: '+254 712 345 678', idNumber: '12345678', country: 'Kenya', requests: '', privacy: true,
         ...(overrides.guest || {}),
       },
       ...overrides,
@@ -84,7 +84,7 @@ describe('reservation lifecycle', () => {
       .send({
         roomTypeSlug: 'valley-suite', ratePlanKey: 'flexible',
         checkIn: '2026-12-28', checkOut: '2026-12-30', adults: 2, children: 0, rooms: 1,
-        guest: { firstName: 'Naomi', lastName: 'Achieng', email: GUEST_CREDS.email, phone: '+254 712 000 042', country: 'Kenya', requests: 'Late arrival', privacy: true },
+        guest: { firstName: 'Naomi', lastName: 'Achieng', email: GUEST_CREDS.email, phone: '+254 712 000 042', idNumber: '99887766', country: 'Kenya', requests: 'Late arrival', privacy: true },
       });
     expect(first.status).toBe(201);
     expect(first.body.reference).toMatch(/^STL-\d{4}-[A-Z2-9]{6}$/);
@@ -95,7 +95,7 @@ describe('reservation lifecycle', () => {
       .send({
         roomTypeSlug: 'valley-suite', ratePlanKey: 'flexible',
         checkIn: '2026-12-28', checkOut: '2026-12-30', adults: 2, children: 0, rooms: 1,
-        guest: { firstName: 'Naomi', lastName: 'Achieng', email: GUEST_CREDS.email, phone: '+254 712 000 042', country: 'Kenya', requests: 'Late arrival', privacy: true },
+        guest: { firstName: 'Naomi', lastName: 'Achieng', email: GUEST_CREDS.email, phone: '+254 712 000 042', idNumber: '99887766', country: 'Kenya', requests: 'Late arrival', privacy: true },
       });
     expect(replay.status).toBe(200);
     expect(replay.body.reference).toBe(first.body.reference);
@@ -161,7 +161,7 @@ describe('concurrency & overbooking safety', () => {
       Array.from({ length: 8 }, (_, i) => createBooking(agent, {
         roomTypeSlug: 'signature-retreat',
         checkIn: '2027-02-10', checkOut: '2027-02-12',
-        guest: { firstName: `Race${i}`, lastName: 'Test', email: `race${i}.${Date.now()}@example.com`, phone: '+254 712 000 000', country: 'Kenya', requests: '', privacy: true },
+        guest: { firstName: `Race${i}`, lastName: 'Test', email: `race${i}.${Date.now()}@example.com`, phone: '+254 712 000 000', idNumber: `99238${i}710`, country: 'Kenya', requests: '', privacy: true },
       }))
     );
     const statuses = results.map((r) => r.status);

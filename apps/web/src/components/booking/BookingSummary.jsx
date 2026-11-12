@@ -1,19 +1,11 @@
-import { photoUrl } from "@/data/images.js";
-import { getRoom } from "@/data/rooms.js";
 import { CHARGES } from "@/utils/pricing.js";
 import { formatKsh, pluralise } from "@/utils/format.js";
 import { formatDate } from "@/utils/dates.js";
 
 /** Booking summary used by guest details, review and confirmation. */
 export default function BookingSummary({ search, selection, pricing, showPricing = true, title = "Your stay" }) {
-  const room = getRoom(selection.roomSlug);
   return (
     <aside className="summary" aria-label="Booking summary">
-      {room && (
-        <div className="summary__image">
-          <img src={photoUrl(room.hero, 800)} alt={room.hero.alt} loading="lazy" />
-        </div>
-      )}
       <div className="summary__body">
         <p className="eyebrow">{title}</p>
         <h2 className="h-sm">{selection.roomName}</h2>

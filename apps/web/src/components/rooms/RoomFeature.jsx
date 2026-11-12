@@ -16,7 +16,7 @@ export default function RoomFeature({ room, variant = "a" }) {
         <Media photo={room.hero} ratio={ratio} parallax sizes="(min-width: 1025px) 58vw, 100vw" zoom />
       </div>
       <div className="room-feature__text" data-reveal-group>
-        <p className="eyebrow eyebrow--terra">{room.number} — {room.name.toUpperCase()}</p>
+        <p className="eyebrow eyebrow--terra">{room.name.toUpperCase()}</p>
         <h3 className="h-lg">{room.tagline}</h3>
         <p className="body">{room.summary}</p>
         <dl className="specs">

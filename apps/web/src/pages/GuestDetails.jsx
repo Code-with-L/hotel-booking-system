@@ -2,27 +2,33 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import BookingSteps from "@/components/booking/BookingSteps.jsx";
 import BookingSummary from "@/components/booking/BookingSummary.jsx";
-import { CheckField, SelectField, TextAreaField, TextField } from "@/components/forms/Fields.jsx";
+import { CheckField, TextField } from "@/components/forms/Fields.jsx";
 import Button from "@/components/ui/Button.jsx";
 import { useBooking } from "@/features/reservations/BookingContext.jsx";
 import { useAuth } from "@/features/guest-account/AuthContext.jsx";
-import { COUNTRIES } from "@/data/site.js";
+import { SITE } from "@/data/site.js";
 import { quoteStay } from "@/services/reservationService.js";
 import { validateGuest } from "@/utils/validators.js";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle.js";
+
+const stripLeading254 = (p) => (p || "").replace(/\D/g, "").replace(/^254/, "");
+const capWords = (s) => (s || "").replace(/(^|\s)(\w)/g, (_, sp, ch) => sp + ch.toUpperCase());
+const phoneLocal = (p) => (p || "").replace(/\D/g, "").replace(/^254/, "").replace(/^0/, "").slice(0, 9);
 
 export default function GuestDetails() {
   useDocumentTitle("Guest details");
   const { search, selection, guest, setGuest } = useBooking();
   const { account } = useAuth();
   const navigate = useNavigate();
+  const waDigits = SITE.phone.replace(/\D/g, "");
   const [values, setValues] = useState(
     guest || {
       firstName: account?.firstName || "",
       lastName: account?.lastName || "",
       email: account?.email || "",
-      phone: account?.phone || "",
-      country: account?.country || "",
+      idNumber: guest?.idNumber || "",
+      phone: stripLeading254(account?.phone),
+      country: "Kenya",
       requests: "",
       privacy: false,
     }
@@ -31,7 +37,6 @@ export default function GuestDetails() {
   const [touched, setTouched] = useState({});
   const [pricing, setPricing] = useState(null);
 
-  // Live price from the server (never trust a client-side quote).
   useEffect(() => {
     if (!selection) return undefined;
     let cancelled = false;
@@ -53,28 +58,40 @@ export default function GuestDetails() {
   if (!selection) return <Navigate to="/availability" replace />;
 
   const set = (k) => (e) => {
-    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    let value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    if (k === "phone" || k === "idNumber") value = String(value).replace(/\D/g, "").slice(0, 12);
     const next = { ...values, [k]: value };
     setValues(next);
     if (touched[k] || errors[k]) setErrors((prev) => ({ ...prev, [k]: validateGuest(next)[k] }));
   };
   const blur = (k) => () => {
     setTouched((t) => ({ ...t, [k]: true }));
+    if (k === "firstName" || k === "lastName") {
+      setValues((v) => ({ ...v, [k]: capWords(v[k]) }));
+      return setErrors((prev) => ({ ...prev, [k]: validateGuest({ ...values, [k]: capWords(values[k]) })[k] }));
+    }
+    if (k === "phone") {
+      const digits = phoneLocal(values.phone);
+      setValues((v) => ({ ...v, phone: digits }));
+      return setErrors((prev) => ({ ...prev, phone: validateGuest({ ...values, phone: digits }).phone }));
+    }
     setErrors((prev) => ({ ...prev, [k]: validateGuest(values)[k] }));
   };
   const field = (k) => ({ value: values[k], onChange: set(k), onBlur: blur(k), error: errors[k] });
 
   const submit = (e) => {
     e.preventDefault();
-    const errs = validateGuest(values);
+    const local = phoneLocal(values.phone);
+    const payload = { ...values, phone: `254${local}`, country: "Kenya" };
+    const errs = validateGuest({ ...values, phone: local });
     setErrors(errs);
-    setTouched({ firstName: true, lastName: true, email: true, phone: true, country: true, privacy: true });
+    setTouched({ firstName: true, lastName: true, email: true, idNumber: true, phone: true, privacy: true });
     if (Object.keys(errs).length) {
       const first = Object.keys(errs)[0];
       document.getElementById(`guest-${first}`)?.focus();
       return;
     }
-    setGuest(values);
+    setGuest(payload);
     navigate("/booking/review");
   };
 
@@ -97,25 +114,38 @@ export default function GuestDetails() {
               </p>
             )}
             <div className="form-grid">
-              <TextField id="guest-firstName" label="First name" autoComplete="given-name" {...field("firstName")} />
-              <TextField id="guest-lastName" label="Last name" autoComplete="family-name" {...field("lastName")} />
-              <TextField id="guest-email" label="Email" type="email" autoComplete="email" {...field("email")} />
-              <TextField id="guest-phone" label="Phone number" type="tel" autoComplete="tel" hint="Include country code, e.g. +254…" {...field("phone")} />
-              <SelectField id="guest-country" label="Country" placeholder="Select your country" options={COUNTRIES} autoComplete="country-name" className="span-2" {...field("country")} />
-              <TextAreaField
-                id="guest-requests"
-                label="Special requests (optional)"
-                rows={4}
-                hint="Arrival time, dietary needs, celebrations. Requests are noted, not guaranteed."
-                className="span-2"
-                {...field("requests")}
-              />
+              <TextField id="guest-firstName" label="First name" autoComplete="given-name" autoCapitalize="words" {...field("firstName")} />
+              <TextField id="guest-lastName" label="Last name" autoComplete="family-name" autoCapitalize="words" {...field("lastName")} />
+              <TextField id="guest-email" label="Email" type="email" autoComplete="email" className="span-2" {...field("email")} />
+              <TextField id="guest-idNumber" label="National ID number" autoComplete="off" inputMode="numeric" pattern="[0-9]*" hint="Required for hotel guest registration in Kenya. Digits only." {...field("idNumber")} />
+              <div className="field span-2">
+                <label className="field__label" htmlFor="guest-phone">Phone number</label>
+                <div className="input-prefix">
+                  <span className="input-prefix__tag">+254</span>
+                  <input
+                    id="guest-phone"
+                    name="phone"
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    pattern="[0-9]*"
+                    placeholder="7XXXXXXXX"
+                    className="input-prefix__input"
+                    value={values.phone}
+                    onChange={set("phone")}
+                    onBlur={blur("phone")}
+                    aria-invalid={Boolean(errors.phone)}
+                    aria-describedby="guest-phone-hint"
+                  />
+                </div>
+                <p id="guest-phone-hint" className="field__hint">{errors.phone ? <span className="field__error">{errors.phone}</span> : "Kenyan numbers only — no 254 needed, just the 9 digits after 07."}</p>
+              </div>
             </div>
 
             <div className="privacy-note">
               <h2 className="eyebrow">Guest privacy notice</h2>
               <p className="small">
-                In this prototype your details are held only in your browser session and are never sent anywhere. In a live version they would be used solely to manage your reservation — see the{" "}
+                Your name, contact details and ID number are stored by the property to register your stay in Kenya, used solely to manage your reservation - see the{" "}
                 <Link to="/privacy">privacy policy</Link>.
               </p>
               <CheckField id="guest-privacy" checked={values.privacy} onChange={set("privacy")} error={errors.privacy}>
@@ -123,8 +153,15 @@ export default function GuestDetails() {
               </CheckField>
             </div>
 
+            <div className="whatsapp-block">
+              <p className="eyebrow eyebrow--olive">Quick questions?</p>
+              <a className="whatsapp-btn" href={`https://wa.me/${waDigits}?text=${encodeURIComponent("Hi! I'd like to ask about booking at The Stillhouse.")}`} target="_blank" rel="noreferrer">
+                Chat with us on WhatsApp →
+              </a>
+            </div>
+
             <div className="form-actions">
-              <Button to="/availability" variant="text">← Back to rooms</Button>
+              <Button to="/availability" variant="text">&larr; Back to rooms</Button>
               <Button type="submit" arrow>Continue to review</Button>
             </div>
           </form>

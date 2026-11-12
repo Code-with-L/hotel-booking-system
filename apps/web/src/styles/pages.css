@@ -600,3 +600,79 @@
 .legal { max-width: 760px; }
 .legal__item { padding-block: 28px; border-top: 1px solid var(--border); }
 .legal__item .h-sm { margin-bottom: 12px; }
+
+/* Booking-first homepage: compact room cards + three steps */
+.room-cards {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 380px));
+  gap: var(--s-5);
+}
+.room-card { display: flex; }
+.room-card__link {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid var(--border);
+  background: var(--white);
+  transition: transform var(--t-base) var(--ease);
+}
+.room-card__link:hover { transform: translateY(-4px); }
+.room-card__image { border-bottom: 1px solid var(--border); }
+.room-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  flex: 1;
+}
+.room-card__tagline {
+  margin: 0;
+  color: var(--stone);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.room-card__foot {
+  margin-top: auto;
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  border-top: 1px solid var(--border);
+  padding-top: var(--s-3);
+}
+.room-card__price { font-size: 22px; font-weight: 600; color: var(--ink); }
+.room-card__price small { font-size: 11px; font-weight: 400; color: var(--stone); margin-left: 4px; }
+.room-card__cta { margin-left: auto; font-weight: 600; }
+
+.how-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-6);
+}
+.how-step { display: flex; gap: var(--s-4); align-items: flex-start; }
+.how-step__num { font-size: 44px; line-height: 1; color: var(--olive); }
+.how-step .h-md { margin: 0 0 var(--s-2); }
+.how-step .body { margin: 0; color: var(--stone); }
+.how-foot {
+  margin-top: var(--s-7);
+  border-top: 1px solid var(--border);
+  padding-top: var(--s-4);
+  display: flex;
+  gap: var(--s-6);
+  flex-wrap: wrap;
+}
+.how-foot a { color: var(--olive); }
+@media (max-width: 1024px) {
+  .how-steps { grid-template-columns: minmax(0, 1fr); }
+}
+
+.pay-box { border: 1px solid var(--border); border-left: 4px solid var(--olive); padding: var(--s-5); margin-block: var(--s-6) var(--s-4); background: var(--limestone); }
+.pay-box .eyebrow { margin: 0 0 var(--s-2); }
+.pay-box .body { margin: 0 0 var(--s-4); }

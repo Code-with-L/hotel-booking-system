@@ -20,20 +20,20 @@ test('guest journey: search -> book -> held reservation -> staff confirms -> gue
 
   // 1. Search availability
   await page.goto(`/availability?checkIn=${checkIn}&checkOut=${checkOut}&adults=2&children=0&rooms=1`);
-  await expect(page.getByRole('heading', { name: 'Choose your room.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Book your room.' })).toBeVisible();
   await expect(page.getByText('Garden Room').first()).toBeVisible({ timeout: 15_000 });
 
   // 2. Select the Garden Room, Flexible rate
   const card = page.locator('.result', { has: page.getByRole('heading', { name: 'The Garden Room' }) });
-  await card.getByRole('button', { name: /Select The Garden Room, Flexible rate/ }).click();
+  await card.getByRole('button', { name: /Book now/ }).first().click();
 
   // 3. Guest details
   await expect(page).toHaveURL(/\/booking\/guest-details/);
   await page.getByLabel('First name').fill('Naomi');
   await page.getByLabel('Last name').fill('Achieng');
   await page.getByLabel('Email').fill(GUEST.email);
-  await page.getByLabel('Phone number').fill('+254 712 000 042');
-  await page.getByLabel('Country').selectOption('Kenya');
+  await page.getByLabel('Phone number').fill('712000042');
+  await page.getByLabel('National ID number').fill('12345678');
   await page.getByLabel('I have read the privacy notice.').check();
   await page.getByRole('button', { name: 'Continue to review' }).click();
 
@@ -43,7 +43,7 @@ test('guest journey: search -> book -> held reservation -> staff confirms -> gue
   await expect(page.getByText('VAT (16%)')).toBeVisible();
   await expect(page.getByText('Tourism levy (2%)')).toBeVisible();
   await page.getByLabel(/I have read and accept/).check();
-  await page.getByRole('button', { name: 'Confirm reservation' }).click();
+  await page.getByRole('button', { name: 'Proceed to payment' }).click();
 
   // 5. Confirmation — booking held, payment pending
   await expect(page).toHaveURL(/\/booking\/confirmation/);
@@ -89,7 +89,7 @@ test('failure path: unavailable party size and form validation', async ({ page }
   await page.goto('/availability?checkIn=2027-06-10&checkOut=2027-06-12&adults=2&children=0&rooms=1');
   await expect(page.getByText('Garden Room').first()).toBeVisible({ timeout: 15_000 });
   const card = page.locator('.result').first();
-  await card.getByRole('button', { name: /Select / }).first().click();
+  await card.getByRole('button', { name: /Book now/ }).first().click();
   await page.getByRole('button', { name: 'Continue to review' }).click();
   await expect(page.getByText('Please enter your first name.')).toBeVisible();
 });

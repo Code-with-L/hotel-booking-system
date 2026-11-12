@@ -112,10 +112,10 @@ reservationsRouter.get('/reservations/:reference', async (req, res, next) => {
       pricing: { nightlyMinor: reservation.nightlyMinor },
     });
     // Data minimization: reference+email possession grants status visibility only - strip extra PII
-    // (phone, country) unless the caller is staff or the signed-in owner.
+    // (phone, country, idNumber) unless the caller is staff or the signed-in owner.
     const privileged = isStaff(req) || canSee(req, reservation);
     if (!privileged && payload.guest) {
-      const { phone, country, ...guestMin } = payload.guest;
+      const { phone, country, idNumber, ...guestMin } = payload.guest;
       res.json({ ...payload, guest: guestMin });
     } else {
       res.json(payload);

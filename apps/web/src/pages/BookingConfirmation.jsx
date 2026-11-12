@@ -16,6 +16,8 @@ export default function BookingConfirmation() {
   useDocumentTitle("Confirmation");
   const { clearDraft } = useBooking();
   const [reservation] = useState(getLastReservation);
+  const [payStatus, setPayStatus] = useState("idle");
+  const [payError, setPayError] = useState("");
 
   // The draft has been converted to a reservation; reset it.
   useEffect(() => {
@@ -41,6 +43,27 @@ export default function BookingConfirmation() {
   const { search, selection, guest, pricing } = reservation;
   const room = getRoom(selection.roomSlug);
   const confirmed = reservation.status === "confirmed";
+
+  const initiatePayment = async () => {
+    setPayStatus("sending");
+    setPayError("");
+    try {
+      const res = await fetch("/api/v1/payments", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reservationReference: reservation.reference, phone: guest?.phone, email: guest?.email }),
+      });
+      if (res.status === 201 || res.status === 200) { setPayStatus("sent"); return; }
+      if (res.status === 503) { setPayStatus("desk"); return; }
+      const body = await res.json().catch(() => null);
+      setPayError(body?.error?.message || "Could not initiate payment.");
+      setPayStatus("error");
+    } catch {
+      setPayError("Network error — could not initiate payment.");
+      setPayStatus("error");
+    }
+  };
 
   return (
     <div className="page-top booking-page confirmation">
@@ -84,6 +107,27 @@ export default function BookingConfirmation() {
               <div><dt>{CHARGES.vat.label}</dt><dd>{formatKsh(pricing.vat)}</dd></div>
               <div className="kv__total"><dt>Total</dt><dd>{formatKsh(pricing.total)}</dd></div>
             </dl>
+
+            {!confirmed && (
+              <div className="pay-box" aria-labelledby="payment-title">
+                <p className="eyebrow" id="payment-title">Payment</p>
+                {payStatus === "idle" && (
+                  <>
+                    <p className="body">One tap sends an STK prompt to the M-Pesa number on this booking{guest?.phone ? ` (${guest.phone})` : ""}. Total <strong>{formatKsh(pricing.total)}</strong>.</p>
+                    <Button arrow onClick={initiatePayment}>Pay with M-Pesa - {formatKsh(pricing.total)}</Button>
+                  </>
+                )}
+                {payStatus === "sending" && <p className="body">Sending the M-Pesa prompt…</p>}
+                {payStatus === "sent" && (
+                  <>
+                    <p className="body"><strong>Check your phone.</strong> Enter your M-Pesa PIN to pay <strong>{formatKsh(pricing.total)}</strong>. Once you enter it, this booking confirms automatically.</p>
+                    <Button variant="outline" onClick={initiatePayment}>Resend the prompt</Button>
+                  </>
+                )}
+                {payStatus === "desk" && <p className="body">Online payment is not enabled for this reservation yet — your room stays held while we confirm it. The front desk will settle the payment; quote reference <strong>{reservation.reference}</strong>.</p>}
+                {payStatus === "error" && <p className="body">{payError || "Payment could not be initiated."} The room stays held — settle at the front desk quoting <strong>{reservation.reference}</strong>.</p>}
+              </div>
+            )}
 
             <div className="form-actions">
               <Button variant="outline" onClick={() => window.print()}><Printer size={15} strokeWidth={1.5} style={{ marginRight: 8 }} />Print summary</Button>

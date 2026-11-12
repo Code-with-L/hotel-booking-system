@@ -171,6 +171,7 @@ model Guest {
   lastName    String
   email       String   @unique // citext via migration; uniqueness is case-insensitive in practice
   phone       String
+  idNumber    String?   // National ID or passport — required at booking for hotel guest registration (see DECISIONS.md D-062); never exposed to possession-of-reference reads
   country     String
   notes       String?
   marketingConsent Boolean @default(false)

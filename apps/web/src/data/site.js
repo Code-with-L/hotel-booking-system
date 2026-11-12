@@ -38,12 +38,12 @@ export const LEGAL = {
       {
         heading: "What we collect",
         body:
-          "To hold a reservation we collect your name, contact details (email and phone), country, special requests, and details of your stay. Account passwords are stored only as bcrypt hashes. Payment providers process card and M-Pesa details directly; The Stillhouse never stores raw card numbers or PINs.",
+          "To hold a reservation we collect your name, contact details (email and phone), National ID number (required for hotel guest registration in Kenya), country, and details of your stay. Account passwords are stored only as bcrypt hashes. Payment providers process card and M-Pesa details directly; The Stillhouse never stores raw card numbers or PINs.",
       },
       {
         heading: "Why we collect it and how long we keep it",
         body:
-          "We use your details to manage your booking, meet our tax obligations in Kenya, and respond to your enquiries. Reservation records are retained as required for accounting; marketing consent is opt-in and can be withdrawn at any time by contacting reservations.",
+          "We use your details to manage your booking, register your stay and meet our tax obligations in Kenya, and respond to your enquiries. Reservation records are retained as required for accounting; marketing consent is opt-in and can be withdrawn at any time by contacting reservations.",
       },
       {
         heading: "Your rights",

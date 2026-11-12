@@ -61,10 +61,11 @@ async function innerCreateReservation({ checkIn, checkOut, adults = 2, children 
     const pricing = await computeStayPricing(tx, { roomType, ratePlan, checkIn, checkOut, rooms });
 
     const email = guestInput.email.trim().toLowerCase();
+    const capWords = (s) => (s || '').trim().replace(/(^|\s)(\w)/g, (_m, sp, ch) => sp + ch.toUpperCase());
     const guest = await tx.guest.upsert({
       where: { email },
-      create: { firstName: guestInput.firstName.trim(), lastName: guestInput.lastName.trim(), email, phone: guestInput.phone.trim(), country: guestInput.country.trim(), notes: guestInput.requests?.trim() || null, marketingConsent: false },
-      update: { firstName: guestInput.firstName.trim(), lastName: guestInput.lastName.trim(), phone: guestInput.phone.trim(), country: guestInput.country.trim() },
+      create: { firstName: capWords(guestInput.firstName), lastName: capWords(guestInput.lastName), email, phone: guestInput.phone.trim(), idNumber: guestInput.idNumber.trim(), country: guestInput.country.trim(), notes: guestInput.requests?.trim() || null, marketingConsent: false },
+      update: { firstName: capWords(guestInput.firstName), lastName: capWords(guestInput.lastName), phone: guestInput.phone.trim(), idNumber: guestInput.idNumber.trim(), country: guestInput.country.trim() },
     });
 
     const holdExpiresAt = new Date(Date.now() + HOLD_TTL_MINUTES * 60 * 1000);

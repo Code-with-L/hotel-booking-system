@@ -54,7 +54,7 @@ export default function Availability() {
         <BookingSteps current={0} />
         <header className="booking-head">
           <p className="eyebrow eyebrow--olive">Availability</p>
-          <h1 className="h-xl">Choose your room.</h1>
+          <h1 className="h-xl">Book your room.</h1>
           {valid && (
             <p className="lede">
               {formatShort(current.checkIn)} – {formatShort(current.checkOut)} · {pluralise(nights, "night")} ·{" "}
@@ -69,7 +69,7 @@ export default function Availability() {
             key={JSON.stringify(current)}
             initial={current}
             variant="bar"
-            submitLabel="Update"
+            submitLabel="Update dates"
             onSearch={(s) => setParams(searchToQuery(s))}
           />
         </div>

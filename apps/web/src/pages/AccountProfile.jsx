@@ -1,9 +1,8 @@
 import { useState } from "react";
 import AccountShell from "@/features/guest-account/AccountShell.jsx";
 import { useAuth } from "@/features/guest-account/AuthContext.jsx";
-import { SelectField, TextField } from "@/components/forms/Fields.jsx";
+import { TextField } from "@/components/forms/Fields.jsx";
 import Button from "@/components/ui/Button.jsx";
-import { COUNTRIES } from "@/data/site.js";
 
 import { useDocumentTitle } from "@/hooks/useDocumentTitle.js";
 
@@ -51,7 +50,7 @@ function Profile() {
           <TextField id="pf-last" label="Last name" value={values.lastName || ""} onChange={set("lastName")} error={errors.lastName} autoComplete="family-name" />
           <TextField id="pf-email" label="Email" type="email" value={values.email || ""} readOnly autoComplete="email" />
           <TextField id="pf-phone" label="Phone" type="tel" value={values.phone || ""} onChange={set("phone")} autoComplete="tel" />
-          <SelectField id="pf-country" label="Country" options={COUNTRIES} value={values.country || "Kenya"} onChange={set("country")} className="span-2" />
+          <TextField id="pf-country" label="Country" value="Kenya" readOnly className="span-2" />
         </div>
         <div className="form-actions">
           {actionError && <p className="form-alert" role="alert">{actionError}</p>}

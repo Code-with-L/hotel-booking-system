@@ -27,6 +27,7 @@ export const guestSchema = z.object({
   lastName: z.string().trim().min(1, 'Last name is required').max(100),
   email: z.string().trim().toLowerCase().email(),
   phone: z.string().trim().regex(/^[+()\d][\d\s().-]{6,}$/, 'Use digits, spaces and an optional leading +'),
+  idNumber: z.string().trim().regex(/^\d{5,12}$/, 'National ID is digits only (5-12)'),
   country: z.string().trim().min(1).max(100),
   requests: z.string().trim().max(600).optional().or(z.literal('')),
   privacy: z.literal(true, { errorMap: () => ({ message: 'Privacy consent is required' }) }),

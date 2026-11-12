@@ -37,7 +37,7 @@ function Stepper({ label, value, min, max, onChange, id }) {
  * Availability search. variant: "bar" (horizontal desktop / stacked mobile) | "panel" (vertical).
  * On submit it stores the search in the booking draft and routes to /availability.
  */
-export default function AvailabilityBar({ variant = "bar", initial, onSearch, submitLabel = "Search availability" }) {
+export default function AvailabilityBar({ variant = "bar", initial, onSearch, submitLabel = "Book these dates" }) {
   const { search, setSearch } = useBooking();
   const navigate = useNavigate();
   const uid = useId();

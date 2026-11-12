@@ -8,11 +8,10 @@ export default function RoomListing({ room, flip = false }) {
     <article className={`room-listing${flip ? " room-listing--flip" : ""}`}>
       <div className="room-listing__image">
         <Media photo={room.hero} ratio="16 / 10" parallax zoom sizes="(min-width: 1025px) 66vw, 100vw" />
-        <span className="room-listing__num numeral" aria-hidden="true">{room.number}</span>
       </div>
       <div className="room-listing__body">
         <div data-reveal="text">
-          <p className="eyebrow eyebrow--terra">{room.number} — {room.name.toUpperCase()}</p>
+          <p className="eyebrow eyebrow--terra">{room.name.toUpperCase()}</p>
           <h2 className="h-xl">{room.name}</h2>
           <p className="lede">{room.summary}</p>
         </div>
