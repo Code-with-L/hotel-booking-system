@@ -1,4 +1,6 @@
 // API server entry: HTTP listener + sweepers + graceful shutdown.
+// The express import also makes this file detectable as an Express service entry point.
+import express from 'express';
 import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { prisma } from './lib/prisma.js';
