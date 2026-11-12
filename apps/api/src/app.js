@@ -8,6 +8,7 @@ import { env } from './config/env.js';
 import { loadSession, apiLimiter, errorHandler, notFoundHandler } from './middleware/index.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { authRouter } from './modules/auth/routes.js';
+import { googleRouter } from './modules/auth/google.js';
 import { roomsRouter, availabilityRouter, quotesRouter } from './modules/rooms/routes.js';
 import { reservationsRouter, accountRouter } from './modules/reservations/routes.js';
 import { paymentsRouter, webhooksRouter, adminPaymentsRouter } from './modules/payments/routes.js';
@@ -45,6 +46,7 @@ export const createApp = () => {
   });
   app.use(loadSession);
 
+  app.use('/api/v1/auth', googleRouter);
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1', roomsRouter);
   app.use('/api/v1', availabilityRouter);

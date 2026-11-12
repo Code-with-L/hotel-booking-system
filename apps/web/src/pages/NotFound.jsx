@@ -6,7 +6,7 @@ export default function NotFound() {
   useDocumentTitle("Page not found");
   return (
     <>
-      <PageHero eyebrow="404" title={<>This path leads <em>nowhere.</em></>}>
+      <PageHero title={<>This path leads <em>nowhere.</em></>}>
         <p className="lede">The page you were looking for doesn't exist. Let's get you back.</p>
         <div className="hero-actions">
           <Button to="/" arrow>Return home</Button>

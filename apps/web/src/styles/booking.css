@@ -487,6 +487,52 @@
 .signin__form .field {
   width: 100%;
 }
+.signin__oauth {
+  grid-column: 8 / 13;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+.signin__or {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  color: var(--stone);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.signin__or::before,
+.signin__or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.btn--google {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 20px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: background-color var(--t-fast), border-color var(--t-fast);
+}
+.btn--google:hover { background: var(--parchment); border-color: var(--ink); }
+.btn--google:focus-visible { outline: 2px solid var(--olive); outline-offset: 2px; }
 .seg {
   display: inline-flex;
   border: 1px solid var(--border);

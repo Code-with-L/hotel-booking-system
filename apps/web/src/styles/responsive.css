@@ -32,7 +32,6 @@
   .hours,
   .location,
   .dining-intro__grid,
-  .room-listing__body,
   .related,
   .exp-home,
   .signin {
@@ -52,7 +51,6 @@
   .hours > *,
   .location > *,
   .dining-intro__grid > *,
-  .room-listing__body > *,
   .related > *,
   .exp-home > *,
   .signin > * {
@@ -62,7 +60,6 @@
     margin-right: 0 !important;
   }
   .page-hero__aside { padding-bottom: 0; }
-  .room-listing__image { width: 100%; }
   .booking-panel,
   .summary { position: static; }
   .booking-layout,
@@ -138,10 +135,15 @@
   .wordmark { font-size: 17px; letter-spacing: 0.22em; }
   .btn { padding: 17px 22px; }
 
-  .hero__stage { height: 86svh; min-height: 560px; }
+  .hero__stage { height: auto; min-height: 0; }
+  .hero__image img { object-position: 60% 30%; }
+  .hero__content { padding-top: calc(var(--nav-h) + 10px); padding-bottom: 14px; gap: 0; }
+  .hero__label { margin-bottom: 8px; }
+  .hero__title { font-size: clamp(30px, 10.6vw, 44px); line-height: 0.92; margin-bottom: 10px; }
+  .hero__text { font-size: 15px; margin-top: 8px; max-width: 46ch; line-height: 1.32; }
+  .hero__ctas { margin-top: 16px; gap: 9px; }
+  .hero__ctas .btn { flex: 1 1 100%; padding-block: 11px; }
   .hero__scroll { display: none; }
-  .hero__ctas .btn { flex: 1 1 100%; }
-  .hero__text { font-size: 16px; margin-top: 20px; }
 
   /* booking controls: stacked rows, touch-sized */
   .avail--bar,
@@ -150,7 +152,7 @@
   .avail--panel .avail__field,
   .bar-strip--inset .avail__field:nth-child(1) {
     border-left: 0 !important;
-    padding: 14px 0;
+    padding: 11px 0;
     width: 100%;
   }
   .bar-strip--inset .avail__field:nth-child(1) { padding-left: 0; }
@@ -168,7 +170,6 @@
   .dining-home__inset { width: 42%; right: 0; bottom: -28px; }
   .dining-home__media { margin-bottom: 40px; }
   .room-hero__meta { gap: 20px; flex-wrap: wrap; }
-  .room-listing__num { font-size: 40px; top: 12px; left: 16px; }
   .exp-home__item--1,
   .exp-home__item--3 { margin-top: 0 !important; }
   .closing__actions .btn { width: 100%; }
@@ -185,6 +186,15 @@
   .steps { gap: 20px; }
   .steps__label { display: none; }
   .steps li.is-current .steps__label { display: inline; }
+}
+
+@media (max-width: 1024px) {
+  .hero__stage { height: auto; min-height: 0; }
+  .hero__content { padding-top: calc(var(--nav-h) + 24px); padding-bottom: 28px; gap: 0; }
+  .hero__title { font-size: clamp(40px, 5.6vw, 72px); }
+  .hero__text { font-size: 16px; margin-top: 16px; }
+  .hero__ctas { margin-top: 22px; gap: 10px; }
+  .hero__ctas .btn { flex: 1 1 100%; padding-block: 14px; }
 }
 
 @media print {

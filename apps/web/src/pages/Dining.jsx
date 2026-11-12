@@ -16,7 +16,7 @@ export default function Dining() {
 
   return (
     <>
-      <PageHero eyebrow="The Table at Stillhouse" title={<>Good things take <em>time.</em></>}>
+      <PageHero title={<>Good things take <em>time.</em></>}>
         <p className="lede">
           A restaurant for slow mornings, long lunches and quiet evenings — cooked over fire, shaped by season.
         </p>

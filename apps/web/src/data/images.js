@@ -26,7 +26,13 @@ export const IMAGES = {
   homeDining: p(30420679, "A candlelit restaurant table among plants"),
   homeDiningDetail: p(24433378, "A table set for two with wine glasses and folded linen"),
 
-  // Rooms — Garden Room
+  // Rooms - Stone Cottage
+  stoneHero: p(16959786, "A stone villa above the lawn and a long pool at evening"),
+  stoneA: p(3755590, "Crisp white linen and soft pillows"),
+  stoneB: p(39836718, "Natural wood and woven textures in a quiet room"),
+  stoneC: p(36162677, "Bed with white linen in soft morning light"),
+
+  // Rooms - Garden Room
   gardenHero: p(36749692, "Bedroom with timber ceiling and glass doors onto greenery"),
   gardenA: p(39836703, "Neutral room with natural textures and soft daylight"),
   gardenB: p(36162677, "Bed with white linen in soft morning light"),

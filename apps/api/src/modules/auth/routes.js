@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../../lib/prisma.js';
 import { env } from '../../config/env.js';
-import { hashToken, requireAuth, authLimiter, SESSION_COOKIE } from '../../middleware/index.js';
+import { requireAuth, authLimiter, hashToken, SESSION_COOKIE } from '../../middleware/index.js';
 import { validate } from '../../middleware/index.js';
 import { signInSchema, registerSchema } from '@stillhouse/shared';
 import { badRequest, unauthorized, ApiError } from '../../lib/errors.js';
@@ -12,33 +12,9 @@ import { audit } from '../../lib/audit.js';
 import { accountPayload } from '../../lib/account.js';
 import { sendPasswordReset } from '../../integrations/email/index.js';
 import { emailConfigured } from '../../integrations/email/transport.js';
+import { createSession, COOKIE_OPTIONS } from '../../lib/session.js';
 
 export const authRouter = Router();
-
-const COOKIE_OPTIONS = () => ({
-  httpOnly: true,
-  sameSite: 'lax',
-  secure: env.cookieSecure,
-  path: '/',
-  maxAge: env.sessionAbsoluteDays * 24 * 60 * 60 * 1000,
-});
-
-async function createSession(userId, req) {
-  const token = crypto.randomBytes(32).toString('base64url');
-  const tokenHash = hashToken(token);
-  const now = new Date();
-  await prisma.session.create({
-    data: {
-      userId,
-      tokenHash,
-      expiresAt: new Date(now.getTime() + env.sessionIdleMinutes * 60 * 1000),
-      absoluteExpiryAt: new Date(now.getTime() + env.sessionAbsoluteDays * 24 * 60 * 60 * 1000),
-      ip: req.ip,
-      userAgent: String(req.headers['user-agent'] || '').slice(0, 300),
-    },
-  });
-  return token;
-}
 
 authRouter.post('/register', authLimiter, validate(registerSchema), async (req, res, next) => {
   try {

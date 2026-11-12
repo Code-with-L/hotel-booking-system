@@ -1,19 +1,10 @@
 import { Link } from "react-router-dom";
 import { NAV_LINKS, SITE } from "@/data/site.js";
-import NewsletterForm from "@/components/forms/NewsletterForm.jsx";
 
 export default function Footer() {
   return (
     <footer className="site-footer on-dark">
       <div className="container">
-        <div className="footer-top">
-          <div className="footer-intro">
-            <p className="eyebrow">{SITE.location}</p>
-            <p className="h-md footer-tagline">{SITE.tagline}</p>
-          </div>
-          <NewsletterForm />
-        </div>
-
         <div className="footer-cols">
           <div>
             <p className="meta">Contact</p>
@@ -64,10 +55,6 @@ export default function Footer() {
               ))}
             </ul>
           </div>
-        </div>
-
-        <div className="footer-wordmark" aria-hidden="true">
-          THE STILLHOUSE
         </div>
 
         <div className="footer-base">

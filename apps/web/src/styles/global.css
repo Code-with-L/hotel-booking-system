@@ -403,21 +403,8 @@ table {
 .site-footer {
   background: var(--charcoal);
   border-top: 1px solid var(--border-dark);
-  padding-top: clamp(64px, 8vw, 112px);
+  padding-top: clamp(40px, 6vw, 80px);
   overflow: hidden;
-}
-.footer-top {
-  display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: var(--gutter);
-  align-items: end;
-  padding-bottom: clamp(48px, 6vw, 80px);
-  border-bottom: 1px solid var(--border-dark);
-}
-.footer-tagline {
-  margin-top: 16px;
-  max-width: 16ch;
-  font-style: italic;
 }
 .footer-cols {
   display: grid;
@@ -447,20 +434,6 @@ table {
 }
 .footer-note {
   font-size: 12px !important;
-}
-.footer-wordmark {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 9vw;
-  letter-spacing: 0.04em;
-  line-height: 0.9;
-  white-space: nowrap;
-  color: rgba(241, 239, 232, 0.92);
-  margin-top: 8px;
-  text-align: left;
-}
-@media (min-width: 1600px) {
-  .footer-wordmark { font-size: 144px; }
 }
 .footer-base {
   display: flex;

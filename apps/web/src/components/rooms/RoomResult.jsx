@@ -9,7 +9,7 @@ export default function RoomResult({ result, nights, onSelect }) {
     <article className={`result result--compact${available ? "" : " is-unavailable"}`}>
       <div className="result__main">
         <header className="result__head">
-          <p className="eyebrow eyebrow--terra">{room.name.toUpperCase()}</p>
+
           <h2 className="h-lg">{room.name}</h2>
           <p className="body">{room.tagline}</p>
           <ul className="result__meta">

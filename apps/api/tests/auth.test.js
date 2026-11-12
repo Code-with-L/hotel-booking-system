@@ -80,7 +80,7 @@ describe('authorization (RBAC)', () => {
 
     const rooms = await admin.get('/api/v1/admin/rooms');
     expect(rooms.status).toBe(200);
-    expect(rooms.body).toHaveLength(28);
+    expect(rooms.body).toHaveLength(32);
 
     const rates = await admin.get('/api/v1/admin/rates');
     expect(rates.status).toBe(200);

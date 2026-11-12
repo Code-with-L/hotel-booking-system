@@ -17,7 +17,7 @@ export default function RelatedRooms({ currentSlug }) {
             <Link key={room.slug} to={`/rooms/${room.slug}`} className={`related__item related__item--${i}`}>
               <Media photo={room.hero} ratio={i === 0 ? "4 / 3" : "4 / 5"} zoom sizes="(min-width: 1025px) 45vw, 100vw" />
               <div className="related__text">
-                <p className="eyebrow eyebrow--terra">{room.number}</p>
+
                 <h3 className="h-md">{room.name}</h3>
                 <p className="small">
                   {room.size} m² · {room.occupancy.label} · from <span className="price">{formatKsh(room.fromPrice)}</span>

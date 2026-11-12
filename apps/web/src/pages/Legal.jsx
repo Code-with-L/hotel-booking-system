@@ -7,7 +7,7 @@ export default function Legal({ doc }) {
   useDocumentTitle(content.title);
   return (
     <>
-      <PageHero eyebrow="Legal" title={content.title}>
+      <PageHero title={content.title}>
         <p className="lede">{content.intro}</p>
       </PageHero>
       <section className="section section--flush-top">

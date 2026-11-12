@@ -27,7 +27,7 @@ export default function RoomDetails() {
         <div className="room-hero__scrim" aria-hidden="true" />
         <div className="container room-hero__content">
           <div>
-            <p className="eyebrow">Accommodation</p>
+
             <h1 className="display">{room.name}</h1>
           </div>
           <dl className="room-hero__meta">

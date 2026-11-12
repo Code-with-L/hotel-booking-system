@@ -50,7 +50,7 @@ export default function Home() {
                 <span className="line"><span data-hero-line>stillness and <em>discovery.</em></span></span>
               </h1>
               <p className="lede hero__text" data-hero-text>
-                A 28-room retreat above the Rift Valley. Pick your dates, see the room and the price, and hold it.
+                A 32-room retreat above the Rift Valley. Pick your dates, see the room and the price, and hold it.
               </p>
               <div className="hero__ctas">
                 <Button to="/availability" variant="light" arrow data-hero-cta>
@@ -81,8 +81,8 @@ export default function Home() {
         <div className="container">
           <div className="section-head section-head--row">
             <div>
-              <p className="eyebrow eyebrow--olive">Rooms</p>
-              <h2 id="rooms-title" className="h-lg">Three expressions,<br />twenty-eight rooms.</h2>
+
+              <h2 id="rooms-title" className="h-lg">Four expressions,<br />thirty-two rooms.</h2>
             </div>
             <ArrowLink to="/rooms">All rooms &amp; rates</ArrowLink>
           </div>
@@ -95,7 +95,7 @@ export default function Home() {
                     <Media photo={room.hero} ratio="4 / 3" zoom sizes="(min-width: 1025px) 33vw, (min-width: 640px) 50vw, 100vw" />
                   </div>
                   <div className="room-card__body">
-                    <p className="eyebrow eyebrow--olive">{room.name}</p>
+
                     <p className="lede room-card__tagline">{room.tagline}</p>
                     <div className="room-card__foot">
                       <span className="meta">From</span>

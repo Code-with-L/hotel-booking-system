@@ -12,7 +12,7 @@ export default function Story() {
   useDocumentTitle("Our Story");
   return (
     <>
-      <PageHero eyebrow="Our Story" title={<>Rooted in place. <br />Designed for <em>pause.</em></>}>
+      <PageHero title={<>Rooted in place. <br />Designed for <em>pause.</em></>}>
         <p className="lede">
           The Stillhouse began with a simple question: what would a place look like if it were designed, entirely, around the idea of slowing down?
         </p>

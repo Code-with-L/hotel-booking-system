@@ -11,8 +11,8 @@ export default function Rooms() {
   useDocumentTitle("Stay");
   return (
     <>
-      <PageHero eyebrow="Stay · Accommodation" title={<>Find your own kind of <em>stillness.</em></>}>
-        <p className="lede">Twenty-eight rooms. Three distinct expressions of retreat.</p>
+      <PageHero title={<>Find your own kind of <em>stillness.</em></>}>
+        <p className="lede">Thirty-two rooms. Four distinct expressions of retreat.</p>
       </PageHero>
 
       <section className="bar-strip" aria-label="Search availability">

@@ -17,7 +17,7 @@ export default function Experiences() {
 
   return (
     <>
-      <PageHero eyebrow="Experiences" title={<>Beyond the <em>room.</em></>}>
+      <PageHero title={<>Beyond the <em>room.</em></>}>
         <p className="lede">
           Six ways to spend a day here — each one a small, unhurried departure from doing nothing at all.
         </p>
