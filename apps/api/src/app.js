@@ -40,7 +40,9 @@ export const createApp = () => {
       const { prisma } = await import('./lib/prisma.js');
       await prisma.$queryRaw`SELECT 1`;
       res.json({ ok: true, service: 'stillhouse-api', db: 'up', time: new Date().toISOString() });
-    } catch (_err) {
+    } catch (err) {
+      const { logger } = await import('./lib/logger.js');
+      logger.warn({ err: String(err?.message || err) }, 'readiness probe: database down');
       res.status(503).json({ ok: false, service: 'stillhouse-api', db: 'down' });
     }
   });
