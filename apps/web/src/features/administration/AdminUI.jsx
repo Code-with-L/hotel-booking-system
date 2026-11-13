@@ -36,6 +36,7 @@ const STATUS_CLASS = {
   "Vacant dirty": "pending",
   Occupied: "inhouse",
   "Out of service": "cancelled",
+  "Needs allocation": "cancelled",
 };
 
 export function StatusBadge({ status }) {

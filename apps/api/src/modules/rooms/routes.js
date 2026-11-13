@@ -6,6 +6,7 @@ import { validate } from '../../middleware/index.js';
 import { computeStayPricing, nightsBetween, toDateOnly } from '../../lib/pricing.js';
 
 import { badRequest } from '../../lib/errors.js';
+import { availabilityLimiter, quoteLimiter } from '../../middleware/index.js';
 
 export const roomsRouter = Router();
 export const availabilityRouter = Router();
@@ -46,7 +47,7 @@ roomsRouter.get('/room-types/:slug', async (req, res, next) => {
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
-availabilityRouter.get('/availability', validate(availabilityQuerySchema, 'query'), async (req, res, next) => {
+availabilityRouter.get('/availability', availabilityLimiter, validate(availabilityQuerySchema, 'query'), async (req, res, next) => {
   try {
     const { checkIn, checkOut, adults, children, rooms } = req.validatedQuery;
     const nights = nightsBetween(checkIn, checkOut);
@@ -118,7 +119,7 @@ availabilityRouter.get('/availability', validate(availabilityQuerySchema, 'query
   } catch (err) { next(err); }
 });
 
-quotesRouter.post('/quotes', validate(quoteRequestSchema), async (req, res, next) => {
+quotesRouter.post('/quotes', quoteLimiter, validate(quoteRequestSchema), async (req, res, next) => {
   try {
     const { roomTypeSlug, ratePlanKey, checkIn, checkOut, adults, children, rooms } = req.validatedBody;
     const type = await prisma.roomType.findUnique({ where: { slug: roomTypeSlug } });

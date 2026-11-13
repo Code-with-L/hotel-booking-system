@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { prisma } from '../../lib/prisma.js';
 import { createReservationTx, reservationPayload } from '../../lib/reservationService.js';
 import { createReservationSchema, cancelReservationSchema } from '@stillhouse/shared';
-import { requireAuth, isStaff, validate } from '../../middleware/index.js';
+import { requireAuth, isStaff, validate, writeLimiter } from '../../middleware/index.js';
 import { badRequest, forbidden, notFound, unauthorized } from '../../lib/errors.js';
 import { releaseAllocations } from '../../lib/allocations.js';
 import { audit } from '../../lib/audit.js';
@@ -14,7 +14,7 @@ import { afterCreated, afterCancelled } from '../../lib/postBookingEvents.js';
 export const reservationsRouter = Router();
 export const accountRouter = Router();
 
-const STATUS_LABEL = { pending: 'Pending', confirmed: 'Confirmed', checked_in: 'Checked-in', checked_out: 'Checked-out', cancelled: 'Cancelled', expired: 'Expired' };
+const STATUS_LABEL = { pending: 'Pending', confirmed: 'Confirmed', checked_in: 'Checked-in', checked_out: 'Checked-out', cancelled: 'Cancelled', expired: 'Expired', needs_allocation: 'Needs allocation' };
 
 export const toListItem = (r, roomNumbers = [], paidMinor = null) => {
   const totalPaid = paidMinor == null ? null : paidMinor;
@@ -51,7 +51,7 @@ export const toListItem = (r, roomNumbers = [], paidMinor = null) => {
   };
 };
 
-reservationsRouter.post('/reservations', validate(createReservationSchema), async (req, res, next) => {
+reservationsRouter.post('/reservations', writeLimiter, validate(createReservationSchema), async (req, res, next) => {
   try {
     const idempotencyKey = req.header('idempotency-key') || req.header('Idempotency-Key');
     if (!idempotencyKey || idempotencyKey.length < 8) {

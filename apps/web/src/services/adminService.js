@@ -69,3 +69,17 @@ export async function updateReservationStatus(reference, statusLabel, reason) {
     body: { status: statusToRaw(statusLabel), reason },
   });
 }
+
+// M10 Phase 0 — Administrative settlement (replaces the pending→confirmed status flip).
+// reason: 'desk_payment' (default; amount must equal remaining balance) | 'comp' | 'management_override'
+// M10 follow-up — settle a needs_allocation reservation once inventory frees up
+export async function assignRooms(reference) {
+  return request(`/admin/reservations/${encodeURIComponent(reference)}/assign-rooms`, { method: "POST" });
+}
+
+export async function settleReservation(reference, body) {
+  return request(`/admin/reservations/${encodeURIComponent(reference)}/settle`, {
+    method: "POST",
+    body,
+  });
+}

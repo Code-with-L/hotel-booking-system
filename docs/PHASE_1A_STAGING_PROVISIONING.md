@@ -119,7 +119,7 @@ Render services in the same workspace + same region share a private network. **I
 | `NODE_ENV` | ✓ (production) | ✓ (production) | Deploy session sets (Render UI) — **value constant** | boot guard requires production |
 | `PORT` | (unset or 10000) | (unset, api listens 4000 internally) | Deploy session sets (Render UI) | default 10000 if null; Render detects 8080/4000 usually — set deterministically |
 | `DATABASE_URL` | — | ✓ | **Leon types** (private internal host) | role `app`, `sslmode=require` |
-| `SESSION_SECRET` | — | ✓ (≥32 random bytes) | **Leon types** (openssl rand -hex 32) | rotate = session invalidation (documented) |
+| `SESSION_SECRET` | — | ✓ (≥32 random bytes) | **Leon types** (openssl rand -hex 32) | read at boot as a guard only — not used to sign cookies; rotation does not invalidate existing sessions (opaque DB tokens) |
 | `WEB_ORIGIN` | — | ✓ `https://staging.thestillhouse.co.ke` | Leon types | must be HTTPS or boot refuses |
 | `FRONTEND_BASE_URL` | — | ✓ `https://staging.thestillhouse.co.ke` | Leon types | used by email links |
 | `COOKIE_SECURE` | — | ✓ `true` | Deploy session sets (Render UI) | boot-enforced |

@@ -125,6 +125,23 @@ export const recordDeskPaymentSchema = z.object({
   note: z.string().trim().max(500).optional(),
 });
 
+// M10 Phase 0 — administrative settlement (desk payment / complimentary / override).
+// comp / management_override require manager+ role and a substantive note.
+export const recordSettlementSchema = z.object({
+  reason: z.enum(['desk_payment', 'comp', 'management_override']),
+  method: z.enum(['cash', 'mpesa', 'card', 'bank', 'other']).default('cash'),
+  amountMinor: minorUnits.optional(), // omitted for comp/override; required and EXACT for desk_payment
+  externalRef: z.string().trim().max(120).optional(),
+  note: z.string().trim().max(500).optional(),
+}).superRefine((v, ctx) => {
+  if (v.reason === 'desk_payment' && v.amountMinor === undefined) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'amountMinor is required for a desk payment.' });
+  }
+  if ((v.reason === 'comp' || v.reason === 'management_override') && (!v.note || v.note.trim().length < 8)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'comp/override settlements require a note of at least 8 characters.' });
+  }
+});
+
 export const enquirySchema = z.object({
   kind: z.enum(['experience', 'dining']),
   subject: z.string().trim().min(1).max(200),

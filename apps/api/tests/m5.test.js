@@ -12,6 +12,7 @@ vi.stubEnv('MPESA_SHORTCODE', '174379');
 vi.stubEnv('MPESA_PASSKEY', 'test-passkey');
 vi.stubEnv('MPESA_CALLBACK_URL', 'https://stillhouse.example/api/v1/webhooks/mpesa');
 
+const queryMap = new Map(); // CheckoutRequestID -> ResultCode for STK query responses (default 0)
 const oauthCalls = [];
 const mockFetch = vi.fn(async (url, options = {}) => {
   const u = String(url);
@@ -24,7 +25,11 @@ const mockFetch = vi.fn(async (url, options = {}) => {
       ResponseCode: '0', ResponseDescription: 'Success. Request accepted for processing',
     });
   }
-  if (u.includes('/mpesa/stkpushquery/v1/query')) return respond(200, { ResponseCode: '0', ResultCode: '0', ResultDesc: 'ok' });
+  if (u.includes('/mpesa/stkpushquery/v1/query')) {
+    const body = JSON.parse(options.body);
+    const code = queryMap.get(body.CheckoutRequestID) ?? '0';
+    return respond(200, { ResponseCode: '0', ResultCode: String(code), ResultDesc: 'mock query' });
+  }
   throw new Error(`Unexpected outbound call in test: ${u}`);
 });
 vi.stubGlobal('fetch', mockFetch);
@@ -136,6 +141,7 @@ describe('M5 webhook terminal-state idempotency', () => {
     const ref = b.body.reference;
     await agent.post('/api/v1/payments').set(JSON_H).send({ reservationReference: ref, phone: '254712000042', email: GUEST_CREDS.email });
     const pay = await sql('SELECT id, "providerReference" FROM payment WHERE "reservationId" = (SELECT id FROM reservation WHERE reference = $1)', [ref]);
+    queryMap.set(pay.rows[0].providerReference, '1032');
     const callback = failedCallback(pay.rows[0].providerReference);
 
     const first = await agent.post('/api/v1/webhooks/mpesa').set(JSON_H).send(callback);
@@ -156,6 +162,7 @@ describe('M5 webhook terminal-state idempotency', () => {
     const ref = b.body.reference;
     await agent.post('/api/v1/payments').set(JSON_H).send({ reservationReference: ref, phone: '254712000042', email: GUEST_CREDS.email });
     const pay = await sql('SELECT id, "providerReference" FROM payment WHERE "reservationId" = (SELECT id FROM reservation WHERE reference = $1)', [ref]);
+    queryMap.set(pay.rows[0].providerReference, '1032'); // Daraja confirms user cancellation
     const callback = failedCallback(pay.rows[0].providerReference);
 
     await agent.post('/api/v1/webhooks/mpesa').set(JSON_H).send(callback);

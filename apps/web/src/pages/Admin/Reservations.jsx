@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import { AdminPageHead, EmptyRow, FilterSelect, SearchInput, StatusBadge, Toolbar } from "@/features/administration/AdminUI.jsx";
-import { getReservations, getReservationDetail, updateReservationStatus } from "@/services/adminService.js";
+import { SelectField, TextField, TextAreaField } from "@/components/forms/Fields.jsx";
+import { getReservations, getReservationDetail, updateReservationStatus, settleReservation, assignRooms } from "@/services/adminService.js";
 import { ROOMS, getRatePlan } from "@/data/rooms.js";
 import { formatDate } from "@/utils/dates.js";
 import { formatKsh } from "@/utils/format.js";
 import Button from "@/components/ui/Button.jsx";
 
-const RESERVATION_STATUSES = ["Pending", "Confirmed", "Checked-in", "Checked-out", "Cancelled", "Expired"];
-const TRANSITIONS = { Pending: ["Confirmed", "Cancelled"], Confirmed: ["Checked-in", "Cancelled"], "Checked-in": ["Checked-out"], "Checked-out": [], Cancelled: [], Expired: [] };
+const RESERVATION_STATUSES = ["Pending", "Confirmed", "Needs allocation", "Checked-in", "Checked-out", "Cancelled", "Expired"];
+const TRANSITIONS = { Pending: ["Cancelled"], Confirmed: ["Checked-in", "Cancelled"], "Checked-in": ["Checked-out"], "Checked-out": [], Cancelled: [], Expired: [], "Needs allocation": ["Cancelled"] };
 
 const PAID_CLASS = { Paid: "confirmed", Partial: "pending", Unpaid: "cancelled" };
 const PaidBadge = ({ status }) =>
@@ -18,6 +19,7 @@ export default function Reservations() {
   const [rows, setRows] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [actionError, setActionError] = useState("");
+  const [settle, setSettle] = useState({ open: false, method: "cash", reason: "desk_payment", externalRef: "", note: "", busy: false, error: "" });
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const [room, setRoom] = useState("");
@@ -177,6 +179,67 @@ export default function Reservations() {
                 ))}
               </ul>
             </>
+          )}
+
+          {open.statusRaw === "needs_allocation" && (
+            <div className="settle-box" style={{ marginTop: "var(--s-4)" }}>
+              <p className="small">Awaiting room assignment. Retry allocation once inventory frees up, or shift to the Manager desk to process a refund — never confirm without allocating.</p>
+              <Button variant="outline" size="sm" onClick={async () => {
+                setActionError("");
+                try {
+                  const res = await assignRooms(open.reference);
+                  const updated = await getReservations();
+                  setRows(updated);
+                  setOpenId(open.id);
+                  if (res.outcome !== "confirmed") setActionError("Still no room available for this stay; the reservation remains awaiting allocation.");
+                } catch (err) { setActionError(err.message || "Could not assign rooms."); }
+              }}>Assign rooms now</Button>
+            </div>
+          )}
+          {(open.statusRaw === "pending" || open.statusRaw === "needs_allocation") && (
+            <div className="settle-box" style={{ marginTop: "var(--s-4)" }}>
+              {!settle.open ? (
+                <Button variant="outline" size="sm" onClick={() => setSettle((s) => ({ ...s, open: true, error: "" }))}>Record desk settlement</Button>
+              ) : (
+                <form
+                  className="settle-form"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setSettle((s) => ({ ...s, busy: true, error: "" }));
+                    try {
+                      const remaining = open.totalMinor - (open.totalPaidMinor || 0);
+                      const isComp = settle.reason !== "desk_payment";
+                      const body = { reason: settle.reason, method: settle.method, externalRef: settle.externalRef || undefined, note: settle.note || undefined, ...(isComp ? {} : { amountMinor: remaining }) };
+                      await settleReservation(open.reference, body);
+                      const updated = await getReservations();
+                      setRows(updated);
+                      setOpenId(open.id);
+                      setSettle({ open: false, method: "cash", reason: "desk_payment", externalRef: "", note: "", busy: false, error: "" });
+                    } catch (err) {
+                      setSettle((s) => ({ ...s, busy: false, error: err.message || "Could not settle this reservation." }));
+                    }
+                  }}
+                >
+                  <p className="eyebrow">Record settlement</p>
+                  <SelectField id="settle-reason" label="Settle as" options={[
+                    { value: "desk_payment", label: "Desk payment (full balance)" },
+                    { value: "comp", label: "Complimentary (manager approval)" },
+                    { value: "management_override", label: "Management override (manager approval)" },
+                  ]} value={settle.reason} onChange={(e) => setSettle((s) => ({ ...s, reason: e.target.value }))} />
+                  <SelectField id="settle-method" label="Method" options={["cash", "mpesa", "card", "bank", "other"]} value={settle.method} onChange={(e) => setSettle((s) => ({ ...s, method: e.target.value }))} />
+                  {settle.reason === "desk_payment"
+                    ? <p className="small">Charge: <strong>{formatKsh(Math.round((open.totalMinor - (open.totalPaidMinor || 0)) / 100))}</strong></p>
+                    : <p className="small">No payment is recorded. The stay is comped and your name + reason are written to the audit log.</p>}
+                  <TextField id="settle-ref" label="External reference (optional)" value={settle.externalRef} onChange={(e) => setSettle((s) => ({ ...s, externalRef: e.target.value }))} />
+                  <TextAreaField id="settle-note" label={settle.reason === "desk_payment" ? "Note (optional)" : "Note (required, min 8 characters)"} rows={2} value={settle.note} onChange={(e) => setSettle((s) => ({ ...s, note: e.target.value }))} />
+                  {settle.error && <p className="form-alert" role="alert">{settle.error}</p>}
+                  <div className="form-actions" style={{ display: "flex", gap: "var(--s-2)", alignItems: "center" }}>
+                    <Button type="submit" size="sm" disabled={settle.busy} arrow>{settle.busy ? "Settling…" : "Settle now"}</Button>
+                    <Button type="button" variant="text" size="sm" onClick={() => setSettle((s) => ({ ...s, open: false }))}>Cancel</Button>
+                  </div>
+                </form>
+              )}
+            </div>
           )}
 
           <label className="toolbar__select drawer__status">

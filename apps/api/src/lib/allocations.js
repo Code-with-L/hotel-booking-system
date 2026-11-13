@@ -71,6 +71,15 @@ export async function releaseAllocations(tx, { sourceType, sourceId, state = 're
   });
 }
 
+// Release a reservation's allocations ONLY if the reservation is not confirmed/checked-in.
+// A confirmed reservation's rooms must never be freed by a payment incident (mismatch, failure, duplicate settlement).
+export async function releaseAllocationsIfUnsettled(tx, reservationId) {
+  const rows = await tx.$queryRaw`SELECT status FROM reservation WHERE id = ${BigInt(reservationId)} FOR UPDATE`;
+  if (rows[0]?.status === 'confirmed' || rows[0]?.status === 'checked_in') return { released: false };
+  await releaseAllocations(tx, { sourceType: 'reservation', sourceId: reservationId, state: 'released' });
+  return { released: true };
+}
+
 // Promote an active hold to a confirmed reservation allocation (same rows, no gap).
 export async function promoteHoldAllocation(tx, { reservationId }) {
   return tx.roomAllocation.updateMany({

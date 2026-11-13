@@ -78,6 +78,14 @@ export const isStaff = (req) => Boolean(req.auth && req.auth.roles.some((r) => [
 // ---------- rate limiting ----------
 const json429 = (code, message) => (_req, res) => res.status(429).json({ error: { code, message } });
 
+const makeLimiter = ({ windowMs, limit, message }) => rateLimit({
+  windowMs,
+  limit,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  handler: json429(API_ERROR.RATE_LIMITED, message),
+});
+
 export const apiLimiter = rateLimit({
   windowMs: env.rateLimitWindowMs,
   limit: env.rateLimitMax,
@@ -93,6 +101,28 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   skipSuccessfulRequests: true,
   handler: json429(API_ERROR.RATE_LIMITED, 'Too many attempts. Please wait before trying again.'),
+});
+
+// Per-surface limits (429 by IP). Tunable via env; in-memory per instance — documented
+// limitation; a shared store is a Phase-1 item. Limits chosen for a 28-room property:
+// guests should never notice them; automation should.
+export const availabilityLimiter = makeLimiter({
+  windowMs: env.rateLimitWindowMs,
+  limit: env.publicReadRateMax,
+  message: 'Too many availability checks. Please wait a moment.',
+});
+
+export const quoteLimiter = makeLimiter({
+  windowMs: env.rateLimitWindowMs,
+  limit: env.writeRateMax,
+  message: 'Too many quote calculations. Please wait a moment.',
+});
+
+// Unauthenticated write endpoints (reservation intake, payment initiation, enquiries, newsletter)
+export const writeLimiter = makeLimiter({
+  windowMs: env.rateLimitWindowMs,
+  limit: env.writeRateMax,
+  message: 'Too many requests. Please wait a moment and try again.',
 });
 
 // ---------- error handling ----------

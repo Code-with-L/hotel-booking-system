@@ -48,11 +48,33 @@ export const createApp = () => {
     try {
       const { prisma } = await import('./lib/prisma.js');
       await prisma.$queryRaw`SELECT 1`;
-      res.json({ ok: true, service: 'stillhouse-api', db: 'up', time: new Date().toISOString() });
+      let jobs = 'unknown';
+      try {
+        const hb = await prisma.setting.findUnique({ where: { key: 'jobs.heartbeat' } });
+        const ageMs = hb ? Date.now() - new Date(hb.updatedAt).getTime() : Infinity;
+        jobs = ageMs <= 5 * 60 * 1000 ? 'ok' : 'stale';
+      } catch { /* heartbeat is advisory; never fail readiness on it */ }
+      res.json({ ok: true, service: 'stillhouse-api', db: 'up', jobs, time: new Date().toISOString() });
     } catch (err) {
       const { logger } = await import('./lib/logger.js');
       logger.warn({ err: String(err?.message || err) }, 'readiness probe: database down');
       res.status(503).json({ ok: false, service: 'stillhouse-api', db: 'down' });
+    }
+  });
+  // Protected probe for the external staleness monitor (M10 §5.3). 503 when worker missing/stale; never public.
+  app.get('/api/v1/jobs/health', async (req, res) => {
+    if (!env.jobToken || String(req.headers.authorization || '') !== `Bearer ${env.jobToken}`) {
+      return res.status(404).end();
+    }
+    try {
+      const { prisma } = await import('./lib/prisma.js');
+      const hb = await prisma.setting.findUnique({ where: { key: 'jobs.heartbeat' } });
+      if (!hb) return res.status(503).json({ ok: false, reason: 'no_heartbeat' });
+      const ageMs = Date.now() - new Date(hb.updatedAt).getTime();
+      if (ageMs > 5 * 60 * 1000) return res.status(503).json({ ok: false, reason: 'stale', ageMs, at: hb.value?.at ?? null });
+      return res.json({ ok: true, worker: hb.value?.worker ?? 'unknown', at: hb.value?.at ?? null, ageMs });
+    } catch {
+      return res.status(503).json({ ok: false, reason: 'probe_failed' });
     }
   });
   app.use(loadSession);

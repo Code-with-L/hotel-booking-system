@@ -146,13 +146,13 @@ describe('M4 check-in / check-out lifecycle', () => {
     const skip = await staff.patch(`/api/v1/admin/reservations/${ref}`).set(JSON_H).send({ status: 'checked_in' });
     expect(skip.status).toBe(409);
 
-    // pending → confirmed
-    const confirm = await staff.patch(`/api/v1/admin/reservations/${ref}`).set(JSON_H).send({ status: 'confirmed' });
-    expect(confirm.status).toBe(200);
-    expect(confirm.body.status).toBe('Confirmed');
+    // pending → confirmed is no longer a bare status flip; it goes through desk settlement
+    const confirm = await staff.post(`/api/v1/admin/reservations/${ref}/settle`).set(JSON_H).send({ reason: 'desk_payment', method: 'cash', amountMinor: created.body.pricing.totalMinor, note: 'settled at desk' });
+    expect(confirm.status).toBe(201);
+    expect(confirm.body.outcome).toBe('confirmed');
 
-    // double confirm: rejected
-    const twice = await staff.patch(`/api/v1/admin/reservations/${ref}`).set(JSON_H).send({ status: 'confirmed' });
+    // double settle: rejected
+    const twice = await staff.post(`/api/v1/admin/reservations/${ref}/settle`).set(JSON_H).send({ reason: 'desk_payment', method: 'cash', amountMinor: created.body.pricing.totalMinor });
     expect(twice.status).toBe(409);
 
     // confirmed → checked_in
@@ -165,16 +165,17 @@ describe('M4 check-in / check-out lifecycle', () => {
     expect(out.body.status).toBe('Checked-out');
   });
 
-  it('concurrent confirmations: exactly one wins, the rest get 409', async () => {
+  it('concurrent desk settlements: exactly one wins, the rest get 409', async () => {
     const agent = request.agent(app);
     const created = await createBooking(agent, { roomTypeSlug: 'garden-room', checkIn: '2027-10-02', checkOut: '2027-10-04' });
     const ref = created.body.reference;
+    const total = created.body.pricing.totalMinor;
     const staff = request.agent(app);
     await signIn(staff, ADMIN_CREDS);
     const results = await Promise.all(
-      Array.from({ length: 5 }, () => staff.patch(`/api/v1/admin/reservations/${ref}`).set(JSON_H).send({ status: 'confirmed' }))
+      Array.from({ length: 5 }, () => staff.post(`/api/v1/admin/reservations/${ref}/settle`).set(JSON_H).send({ reason: 'desk_payment', method: 'cash', amountMinor: total }))
     );
-    const oks = results.filter((r) => r.status === 200);
+    const oks = results.filter((r) => r.status === 201);
     const conflicts = results.filter((r) => r.status === 409);
     expect(oks).toHaveLength(1);
     expect(conflicts.length).toBe(results.length - 1);

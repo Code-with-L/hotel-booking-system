@@ -467,7 +467,8 @@ exports.ReservationStatus = exports.$Enums.ReservationStatus = {
   checked_in: 'checked_in',
   checked_out: 'checked_out',
   cancelled: 'cancelled',
-  expired: 'expired'
+  expired: 'expired',
+  needs_allocation: 'needs_allocation'
 };
 
 exports.ReservationSource = exports.$Enums.ReservationSource = {

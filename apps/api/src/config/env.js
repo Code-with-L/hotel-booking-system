@@ -76,4 +76,7 @@ export const env = {
   rateLimitWindowMs: num('RATE_LIMIT_WINDOW_MS', 15 * 60 * 1000),
   rateLimitMax: num('RATE_LIMIT_MAX', 300),
   authRateLimitMax: num('AUTH_RATE_LIMIT_MAX', 10),
+  publicReadRateMax: num('PUBLIC_READ_RATE_MAX', 180), // availability / catalogue reads per 15 min
+  writeRateMax: num('PUBLIC_WRITE_RATE_MAX', 60),      // public write actions per 15 min
+  jobToken: process.env.JOB_TOKEN || '',               // protects GET /jobs/health when set
 };

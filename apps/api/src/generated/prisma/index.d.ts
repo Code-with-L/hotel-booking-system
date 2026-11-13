@@ -156,7 +156,8 @@ export const ReservationStatus: {
   checked_in: 'checked_in',
   checked_out: 'checked_out',
   cancelled: 'cancelled',
-  expired: 'expired'
+  expired: 'expired',
+  needs_allocation: 'needs_allocation'
 };
 
 export type ReservationStatus = (typeof ReservationStatus)[keyof typeof ReservationStatus]

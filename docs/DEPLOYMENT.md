@@ -33,7 +33,7 @@ Never commit values. Names only in `.env.example`. Secrets marked 🔒.
 | Variable | Required | Notes |
 |---|---|---|
 | `DATABASE_URL` | 🔒 yes | Managed Postgres connection string; app role must be non-DDL |
-| `SESSION_SECRET` | 🔒 yes | ≥ 32 random bytes; rotate = all sessions invalidated |
+| `SESSION_SECRET` | 🔒 yes | ≥ 32 random bytes; read once at application startup (production boot guard only) — **never used to sign or verify cookies or sessions**; the session cookie (`stillhouse_session`) is unsigned and the server stores only a SHA-256 hash of an opaque random token in the `session` table. Changing `SESSION_SECRET` does **not** invalidate existing sessions |
 | `PORT` / `WEB_ORIGIN` / `FRONTEND_BASE_URL` / `TRUST_PROXY` | yes | `TRUST_PROXY=1` behind one proxy hop (default) |
 | `COOKIE_SECURE` | yes | Must be `true` in production (enforced) |
 | `RATE_LIMIT_WINDOW_MS` / `RATE_LIMIT_MAX` / `AUTH_RATE_LIMIT_MAX` | no | Defaults: 15m, 300, 10 |

@@ -13,7 +13,13 @@ For front-desk, management and the owner. No code required for daily operation.
 4c. **Financials** - Operations -> **Financials** (manager+): collected / outstanding / refunds / cancellation fees / pending value, outstanding-balances table and recent payments. Figures come from recorded payments only; desk settlements count immediately.
 5. **Maintenance** - Rooms -> take room out of service with a note (creates a dated maintenance block; the room immediately disappears from sale). When fixed, set back to **Vacant clean** (future blocks are released automatically).
 
-## Staging & release
+## M10 Phase 0 — worker, settlement and health probes
+
+- **Background worker**: `npm run worker` (or `node src/worker.js`) in `apps/api`. Runs every 60 s against the DB with an advisory lock — safe to run alongside Docker/`server.js` or instead of it. Writes a `jobs.heartbeat` row on every tick; `/api/v1/ready` reports `jobs: ok|stale` (advisory only); `/api/v1/jobs/health` (token-protected by `JOB_TOKEN`) returns 503 if the worker stops — wire this into your external monitor.
+- **Desk settlement**: Reservations drawer → "Record desk settlement". Desk payment requires the **full remaining balance**; complimentary/override requires manager+ and an 8+ character note; no payment row is recorded for comps (audit only). The old bare "Confirmed" status transition is gone — settling is the only path to confirmed.
+- **Payment health** (manager+) now also reports `needs_allocation` (high) — settled bookings lacking a room — and `stale_unverified_payments` (medium) — callbacks Daraja never confirmed. Both are operator tasks (assign allocation / requery), never ledger edits.
+- **Payment attempts** are idempotent per provider reference; duplicate callbacks settle once. If a reservation is confirmed without a payment row (override), check the audit log — there is no silent confirmation path anymore.
+
 
 - Staging is rehearsed locally via docker-compose.staging.yml (isolated project stillhouse-staging, self-signed TLS) - see docs/STAGING.md for bring-up, the owner commissioning checklist, and promotion to a public VPS + managed PostgreSQL.
 - Deploy order is always: migrations first, then the API, then verify /api/v1/ready returns {"ok":true,"db":"up"}, then smoke node tests/staging-acceptance.mjs (16/16 expected).

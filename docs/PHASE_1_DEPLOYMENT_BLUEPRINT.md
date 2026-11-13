@@ -80,7 +80,7 @@ After Leon authorizes Phase 1 (Gate A sign-off pre-work; **not yet**):
 
 ## 5. Security checklist (hard requirements, all already in the codebase)
 
-- Secrets in Render env (secret files / env groups) — never in git, docs, logs; rotation = redeploy (session invalidation for SESSION_SECRET is understood).
+- Secrets in Render env (secret files / env groups) — never in git, docs, logs; rotation = redeploy (SESSION_SECRET is a boot-time guard only — it is not used to sign sessions, so rotating it does not invalidate existing sessions).
 - HTTPS enforced at edge (Render) + HSTS at nginx; redirect HTTP→HTTPS (Render handles; nginx keeps its own).
 - Cookies `Secure; HttpOnly; SameSite=Lax` (boot-required).
 - CSP: `default-src 'self'`; upgrade `img-src` after photography commissioned.

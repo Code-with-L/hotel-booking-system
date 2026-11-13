@@ -1,11 +1,36 @@
 // Reservation engine: quotes, creation, holds, idempotency, cancellation, race safety, payments.
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
 import request from 'supertest';
-import { createApp } from '../src/app.js';
+
+// Webhook settlement is verified via Daraja (STK query): stub env + outbound HTTP (never hits network).
+vi.stubEnv('MPESA_ENV', 'sandbox');
+vi.stubEnv('MPESA_CONSUMER_KEY', 'test-consumer-key');
+vi.stubEnv('MPESA_CONSUMER_SECRET', 'test-consumer-secret');
+vi.stubEnv('MPESA_SHORTCODE', '174379');
+vi.stubEnv('MPESA_PASSKEY', 'test-passkey');
+vi.stubEnv('MPESA_CALLBACK_URL', 'https://stillhouse.example/api/v1/webhooks/mpesa');
+const mockFetch = vi.fn(async (url, options = {}) => {
+  const u = String(url);
+  const respond = (status, json) => ({
+    ok: status < 400,
+    status,
+    text: async () => JSON.stringify(json),
+    json: async () => json,
+  });
+  if (u.includes('/oauth/v1/generate')) return respond(200, { access_token: 'test-access-token', expires_in: '3599' });
+  if (u.includes('/mpesa/stkpushquery/v1/query')) {
+    const body = JSON.parse(options.body);
+    if (body.CheckoutRequestID === 'ws_CO_TEST999') return respond(200, { ResponseCode: '0', ResultCode: '9999', ResultDesc: 'The transaction is being processed' });
+    return respond(200, { ResponseCode: '0', ResultCode: '0', ResultDesc: 'The service request is processed successfully.' });
+  }
+  throw new Error(`Unexpected outbound call in test: ${u}`);
+});
+vi.stubGlobal('fetch', mockFetch);
+
+let app;
+beforeAll(async () => { const mod = await import('../src/app.js'); app = mod.createApp(); });
 import { truncateBookingTables, GUEST_CREDS, ADMIN_CREDS, TEST_DATABASE_URL } from './helpers.mjs';
 import pg from 'pg';
-
-const app = createApp();
 const QUERY_MARK = { 'Content-Type': 'application/json' };
 
 const createBooking = (agent, overrides = {}) =>
@@ -193,16 +218,6 @@ describe('concurrency & overbooking safety', () => {
 describe('payment flow (Daraja unavailable → desk settlement)', () => {
   beforeEach(truncateBookingTables);
 
-  it('initiating M-Pesa without configuration returns 503, never a fake success', async () => {
-    const agent = request.agent(app);
-    await agent.post('/api/v1/auth/sign-in').send(GUEST_CREDS);
-    const created = await createBooking(agent, { checkIn: '2027-04-02', checkOut: '2027-04-05' });
-    const res = await agent.post('/api/v1/payments').set(QUERY_MARK).send({
-      reservationReference: created.body.reference, phone: '254712000042',
-    });
-    expect(res.status).toBe(503);
-    expect(res.body.error.code).toBe('MPESA_NOT_CONFIGURED');
-  });
 
   it('desk settlement confirms the reservation and is manager/receptionist only', async () => {
     const agent = request.agent(app);

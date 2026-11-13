@@ -10,7 +10,7 @@ import { toListItem } from '../reservations/routes.js';
 
 export const adminRouter = Router();
 
-const STATUS_LABEL = { pending: 'Pending', confirmed: 'Confirmed', checked_in: 'Checked-in', checked_out: 'Checked-out', cancelled: 'Cancelled', expired: 'Expired' };
+const STATUS_LABEL = { pending: 'Pending', confirmed: 'Confirmed', checked_in: 'Checked-in', checked_out: 'Checked-out', cancelled: 'Cancelled', expired: 'Expired', needs_allocation: 'Needs allocation' };
 const LABEL_TO_RAW = Object.fromEntries(Object.entries(STATUS_LABEL).map(([k, v]) => [v.toLowerCase(), k]));
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
@@ -165,13 +165,16 @@ adminRouter.get('/admin/reservations/:reference', requireRole('receptionist', 'm
   } catch (err) { next(err); }
 });
 
+// M10 Phase 0 (P0-04): pending→confirmed no longer exists. Desk settlement goes through
+// POST /admin/reservations/:reference/settle (receptionist+), which enforces exact-balance collection.
 const TRANSITIONS = {
-  pending: ['confirmed', 'cancelled'],
+  pending: ['cancelled'],
   confirmed: ['checked_in', 'cancelled'],
   checked_in: ['checked_out'],
   checked_out: [],
   cancelled: [],
   expired: [],
+  needs_allocation: ['cancelled'],
 };
 
 adminRouter.patch('/admin/reservations/:reference', requireRole('receptionist', 'manager', 'admin'), validate(reservationStatusPatchSchema), async (req, res, next) => {
@@ -187,6 +190,9 @@ adminRouter.patch('/admin/reservations/:reference', requireRole('receptionist', 
     if (!r) throw notFound('Reservation not found.');
     const allowed = TRANSITIONS[r.status] || [];
     if (!allowed.includes(target)) {
+      if (r.status === 'pending' && target === 'confirmed') {
+        throw conflict('Use the settlement endpoint: POST /api/v1/admin/reservations/:reference/settle. Desk settlement records the payment, then confirms — a status flip alone no longer does this.', );
+      }
       throw conflict(`Invalid transition: ${r.status} → ${target}. Allowed from ${r.status}: ${allowed.join(', ') || 'none'}.`);
     }
     const now = new Date();
@@ -685,7 +691,7 @@ adminRouter.get('/admin/reports/payment-health', requireRole('manager', 'admin')
     const minus30d = new Date(now - 30 * 86400000);
     const [
       dupAttempts, stalePending, amountMismatch, overpaid, cancelledPaid, failed30d,
-      invoiceFailed, invoicePendingStale, succeededVsAttemptsRows, refundByReservation,
+      invoiceFailed, invoicePendingStale, needsAllocationCount, staleUnverifiedCount, succeededVsAttemptsRows, refundByReservation,
     ] = await Promise.all([
       prisma.$queryRaw`SELECT "providerReference", count(*)::int AS n FROM payment_attempt
         WHERE "providerReference" IS NOT NULL GROUP BY "providerReference" HAVING count(*) > 2`,
@@ -709,6 +715,8 @@ adminRouter.get('/admin/reports/payment-health', requireRole('manager', 'admin')
       prisma.payment.count({ where: { status: 'failed', updatedAt: { gte: minus30d } } }),
       prisma.taxInvoice.findMany({ where: { status: 'failed' }, select: { id: true, reservation: { select: { reference: true } }, attempts: true, lastError: true }, orderBy: { createdAt: 'asc' }, take: 25 }),
       prisma.taxInvoice.findMany({ where: { status: 'pending', createdAt: { lt: minus60m } }, select: { id: true, reservation: { select: { reference: true } }, attempts: true }, orderBy: { createdAt: 'asc' }, take: 25 }),
+      prisma.reservation.count({ where: { status: 'needs_allocation', createdAt: { lt: minus60m } } }),
+      prisma.payment.count({ where: { status: 'pending', updatedAt: { lt: minus60m } } }),
       prisma.$queryRaw`SELECT
         (SELECT COALESCE(SUM("amountMinor"), 0) FROM payment WHERE status = 'succeeded')::bigint AS payments,
         (SELECT COALESCE(SUM("amountMinor"), 0) FROM payment_attempt WHERE status = 'succeeded')::bigint AS attempts`,
@@ -736,6 +744,8 @@ adminRouter.get('/admin/reports/payment-health', requireRole('manager', 'admin')
       { id: 'invoices_failed', severity: 'medium', label: 'eTIMS invoices failed to issue', count: invoiceFailed.length, samples: invoiceFailed.slice(0, 5).map((i) => ({ id: i.id, reference: i.reservation?.reference, attempts: i.attempts, error: i.lastError })), action: 'Check eTIMS configuration; retry runs hourly (sweeper) up to 5 attempts.' },
       { id: 'invoices_pending_stale', severity: 'low', label: 'eTIMS invoices pending older than 60 minutes', count: invoicePendingStale.length, samples: invoicePendingStale.slice(0, 5).map((i) => ({ id: i.id, reference: i.reservation?.reference, attempts: i.attempts })), action: 'Check eTIMS pipeline; retry runs hourly.' },
       { id: 'succeeded_sum_mismatch', severity: sumAttempts === sumPayments ? 'none' : 'high', label: 'Attempt-vs-payment succeeded totals', count: sumAttempts === sumPayments ? 0 : 1, detail: `payments=${sumPayments} attempts=${sumAttempts}`, action: 'Totals must match; if they do not, inspect payment_attempt rows directly.' },
+      { id: 'needs_allocation', severity: needsAllocationCount > 0 ? 'high' : 'none', label: 'Settled bookings missing a room assignment', count: Number(needsAllocationCount ?? 0), action: 'Assign rooms via the front desk assignment tool or check-out; do NOT mark confirmed without allocating.' },
+      { id: 'stale_unverified_payments', severity: staleUnverifiedCount > 0 ? 'medium' : 'none', label: 'M-Pesa callbacks/queries never confirmed by Daraja (>60 min)', count: Number(staleUnverifiedCount ?? 0), action: 'Use Requery (manager) or wait for the sweeper; guests may not see a confirmation until resolved.' },
     ].filter((f) => f.count > 0);
 
     res.json({

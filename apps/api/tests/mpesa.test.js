@@ -82,7 +82,8 @@ describe('daraja STK push (mocked HTTP)', () => {
       reservationReference: booking.reference, phone: '254712000042',
     });
     expect(res.status).toBe(201);
-    expect(res.body.checkoutRequestId).toBe('ws_CO_TEST_MOCK001');
+    // M10: the checkout id never leaks to the client — the settlement is authorised by the provider, not by possession
+    expect(res.body.checkoutRequestId).toBeUndefined();
     expect(res.body.status).toBe('pending');
 
     const push = calls.find((c) => c.url.includes('/mpesa/stkpush/v1/processrequest'));
