@@ -817,7 +817,7 @@ a:hover > .media--zoom img {
               top 1.15s cubic-bezier(0.22, 0.61, 0.2, 1),
               transform 1.15s cubic-bezier(0.22, 0.61, 0.2, 1),
               opacity 0.6s ease;
-  animation: nf-fade 0.8s ease backwards;
+  animation: nf-fade 0.8s ease both;
   will-change: left, top, transform;
   user-select: none;
   pointer-events: none;
