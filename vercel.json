@@ -15,5 +15,10 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": { "service": "api" } },
     { "source": "/(.*)", "destination": { "service": "web" } }
-  ]
+  ],
+  "functions": {
+    "apps/api/src/app.js": {
+      "includeFiles": "apps/api/src/generated/prisma/**"
+    }
+  }
 }
