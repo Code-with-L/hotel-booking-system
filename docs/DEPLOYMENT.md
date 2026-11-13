@@ -1,6 +1,8 @@
 # Deployment — The Stillhouse
 
-**Status:** Prepared at M2-F (2026-11-11). Not yet deployed anywhere — the owner chooses hosting. Dockerfiles are **build-verified** (both images built and healthy checks defined); the reference topology below was exercised locally only.
+**Status (2026-11-13):** The system is LIVE at `https://hotel-booking-system-jet-gamma.vercel.app` (Vercel, project web + API + Neon PostgreSQL eu-central-1). M8/M10 are deployed (`main` @ `159b970` includes security headers; M-Pesa remains sandbox). The production database has NOT yet been migrated to the M10 financial-integrity schema — that action requires owner authorization (see `docs/FINAL_PRODUCTION_COMMISSIONING_REPORT.md`). Do not confuse "deployed" with "launched": business readiness gates remain with the owner.
+
+**History:** Prepared at M2-F (2026-11-11). Supersedes the stale pre-deployment note below.
 
 ## 1. Recommended production shape
 
