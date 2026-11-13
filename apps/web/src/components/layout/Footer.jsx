@@ -11,12 +11,11 @@ export default function Footer() {
             <ul>
               <li>{SITE.location}</li>
               <li>
-                <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+                <a href={`https://wa.me/${SITE.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
+                  WhatsApp {SITE.phone}
+                </a>
               </li>
-              <li>
-                <a href={`tel:${SITE.phone.replace(/\s/g, "")}`}>{SITE.phone}</a>
-              </li>
-              <li className="footer-note">Placeholder details — concept property</li>
+              <li className="footer-note">The Stillhouse is a fictional boutique retreat; imagery is illustrative.</li>
             </ul>
           </div>
           <div>
@@ -44,15 +43,18 @@ export default function Footer() {
             </ul>
           </div>
           <div>
-            <p className="meta">Follow</p>
+            <p className="meta">Reach us</p>
             <ul>
-              {SITE.socials.map((s) => (
-                <li key={s.label}>
-                  <a href={s.href} target="_blank" rel="noreferrer">
-                    {s.label}
-                  </a>
-                </li>
-              ))}
+              <li>
+                <a
+                  className="whatsapp-btn"
+                  href={`https://wa.me/${SITE.phone.replace(/\D/g, "")}?text=${encodeURIComponent(SITE.whatsappMessage)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Chat on WhatsApp
+                </a>
+              </li>
             </ul>
           </div>
         </div>

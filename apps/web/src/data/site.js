@@ -12,14 +12,9 @@ export const SITE = {
   tagline: "A quieter kind of extraordinary.",
   location: "Naivasha, Kenya",
   coordinates: "0°43′S · 36°26′E",
-  // Placeholder contact data for a fictional property.
-  email: "reservations@stillhouse.example",
-  phone: "+254 000 000 000",
-  socials: [
-    { label: "Instagram", href: "https://www.instagram.com/" },
-    { label: "Facebook", href: "https://www.facebook.com/" },
-    { label: "Pinterest", href: "https://www.pinterest.com/" },
-  ],
+  // Contact: WhatsApp only — no email, no social channels.
+  phone: "+254 708 097 490",
+  whatsappMessage: "Hi! I'd like to ask about booking at The Stillhouse.",
 };
 
 export const COUNTRIES = [
@@ -48,7 +43,7 @@ export const LEGAL = {
       {
         heading: "Your rights",
         body:
-          "You may request access to, correction of, or erasure of your personal data, subject to legal and tax retention requirements. Contact reservations@stillhouse.example.",
+          "You may request access to, correction of, or erasure of your personal data, subject to legal and tax retention requirements. Chat to us on WhatsApp (+254 708 097 490).",
       },
     ],
   },
