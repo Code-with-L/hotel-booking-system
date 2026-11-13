@@ -52,8 +52,7 @@ export const createApp = () => {
     } catch (err) {
       const { logger } = await import('./lib/logger.js');
       logger.warn({ err: String(err?.message || err) }, 'readiness probe: database down');
-      // TEMP DEBUG: echo the reason so deployment triage doesn't require dashboard access. Remove after the DB issue is resolved.
-      res.status(503).json({ ok: false, service: 'stillhouse-api', db: 'down', detail: String(err?.message || err) });
+      res.status(503).json({ ok: false, service: 'stillhouse-api', db: 'down' });
     }
   });
   app.use(loadSession);
