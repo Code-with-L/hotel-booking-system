@@ -3,7 +3,10 @@
     "web": {
       "root": "apps/web",
       "framework": "vite",
-      "installCommand": "cd ../.. && npm ci --workspace=@stillhouse/web --include=dev"
+      "installCommand": "cd ../.. && npm ci --workspace=@stillhouse/web --include=dev",
+      "rewrites": [
+        { "source": "/(.*)", "destination": "/index.html" }
+      ]
     },
     "api": {
       "root": "apps/api",
