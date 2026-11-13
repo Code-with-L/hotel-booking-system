@@ -576,8 +576,8 @@ config.engineWasm = undefined
 config.compilerWasm = {
       getRuntime: async () => require('./query_compiler_bg.js'),
       getQueryCompilerWasmModule: async () => {
-        const queryCompilerWasmFilePath = require('path').join(config.dirname, 'query_compiler_bg.wasm')
-        const queryCompilerWasmFileBytes = require('fs').readFileSync(queryCompilerWasmFilePath)
+        // [patched by scripts/inline-wasm.mjs] inline base64 so the serverless bundle needs no wasm file on disk
+        const queryCompilerWasmFileBytes = Buffer.from(require('./query_compiler_bg.b64.js'), 'base64')
 
         return new WebAssembly.Module(queryCompilerWasmFileBytes)
       }
