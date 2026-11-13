@@ -6,7 +6,6 @@ import RoomGallery from "@/components/rooms/RoomGallery.jsx";
 import RelatedRooms from "@/components/rooms/RelatedRooms.jsx";
 import AmenityIcon from "@/components/rooms/AmenityIcon.jsx";
 import ClosingCta from "@/components/editorial/ClosingCta.jsx";
-import DemoNotice from "@/components/ui/DemoNotice.jsx";
 import Media from "@/components/ui/Media.jsx";
 import Button from "@/components/ui/Button.jsx";
 import NotFound from "./NotFound.jsx";
@@ -107,9 +106,6 @@ export default function RoomDetails() {
                 <li key={f}>{f}</li>
               ))}
             </ul>
-            <DemoNotice label="Sample content">
-              Amenities and features are illustrative for a concept property and are not confirmed facilities.
-            </DemoNotice>
           </div>
         </div>
       </section>
@@ -147,3 +143,4 @@ export default function RoomDetails() {
     </>
   );
 }
+

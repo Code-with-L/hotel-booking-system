@@ -8,6 +8,7 @@ import AvailabilityBar from "@/components/booking/AvailabilityBar.jsx";
 import Button, { ArrowLink } from "@/components/ui/Button.jsx";
 import Media from "@/components/ui/Media.jsx";
 import { photoSrcSet, photoUrl } from "@/data/images.js";
+import { EXPERIENCES } from "@/data/experiences.js";
 import { formatKsh } from "@/utils/format.js";
 
 export default function Home() {
@@ -66,7 +67,7 @@ export default function Home() {
               </p>
               <div className="hero__ctas">
                 <Button to="/availability" variant="light" arrow data-hero-cta>
-                  Reserve your stay
+                  Book your room
                 </Button>
                 <Button href="#rooms" variant="ghost-light" data-hero-cta>
                   See the rooms
@@ -84,6 +85,49 @@ export default function Home() {
         <div className="hero__bar" data-hero-bar>
           <div className="container">
             <AvailabilityBar variant="bar" />
+          </div>
+        </div>
+      </section>
+
+      {/* DINING — slow mornings, long lunches */}
+      <section className="section bg-parchment" aria-labelledby="dining-home-title">
+        <div className="container dining-home__grid">
+          <div className="dining-home__media" data-reveal="image">
+            <Media photo={IMAGES.homeDining} ratio="5 / 4" sizes="(min-width: 1025px) 46vw, 100vw" />
+            <Media photo={IMAGES.homeDiningDetail} ratio="4 / 5" sizes="(min-width: 1025px) 22vw, 45vw" className="dining-home__inset" />
+          </div>
+          <div className="dining-home__text" data-reveal-group>
+            <p className="eyebrow eyebrow--olive">Dining at The Stillhouse</p>
+            <h2 id="dining-home-title" className="h-lg">Breakfast that waits for you, dinner that shouldn't be hurried.</h2>
+            <p className="body">
+              A fire-fed kitchen shaped by season and small farmers. Short menus, steady hands, and wines that don't require a dissertation.
+            </p>
+            <ArrowLink to="/dining">Discover the dining room</ArrowLink>
+          </div>
+        </div>
+      </section>
+
+      {/* EXPERIENCES — the best of the valley */}
+      <section className="section" aria-labelledby="experiences-title">
+        <div className="container">
+          <div className="section-head section-head--row">
+            <div>
+              <p className="eyebrow eyebrow--olive">Beyond the room</p>
+              <h2 id="experiences-title" className="h-lg">Days the valley gives back.</h2>
+            </div>
+            <ArrowLink to="/experiences">Explore all experiences</ArrowLink>
+          </div>
+          <div className="exp-home">
+            {EXPERIENCES.slice(0, 4).map((item, i) => (
+              <Link key={item.id} to={`/experiences#${item.id}`} className={`exp-home__item exp-home__item--${i}`} data-reveal-group>
+                <Media photo={item.image} ratio="4 / 3" zoom sizes="(min-width: 1025px) 40vw, 50vw" />
+                <div className="exp-home__text">
+                  <p className="eyebrow eyebrow--terra">{item.category}</p>
+                  <h3 className="h-sm">{item.title}</h3>
+                  <p className="small">{item.duration} · {item.price}</p>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>

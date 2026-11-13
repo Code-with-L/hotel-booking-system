@@ -2,8 +2,8 @@ import Media from "@/components/ui/Media.jsx";
 import Button from "@/components/ui/Button.jsx";
 
 /**
- * Magazine-style experience entry. `layout` selects one of six compositions
- * (CSS: .exp--a … .exp--f) so the page never settles into a repeating grid.
+ * Editorial experience entry. Alternating magazine layout (.exp--a … .exp--f).
+ * Shows the honest price/duration, what's included, and enquire CTA.
  */
 export default function ExperienceBlock({ item, index, layout = "a", onEnquire }) {
   const ratios = { a: "3 / 2", b: "4 / 5", c: "1 / 1", d: "16 / 10", e: "4 / 5", f: "3 / 2" };
@@ -18,7 +18,12 @@ export default function ExperienceBlock({ item, index, layout = "a", onEnquire }
         </p>
         <h2 className="h-lg">{item.title}</h2>
         <p className="body">{item.text}</p>
-        <p className="meta exp__duration">Duration · {item.duration}</p>
+        {item.includes?.length > 0 && (
+          <ul className="exp__includes" aria-label="Included">
+            {item.includes.map((inc) => <li key={inc}>{inc}</li>)}
+          </ul>
+        )}
+        <p className="meta exp__duration">{item.duration} · <strong>{item.price}</strong></p>
         <Button variant="outline" size="sm" arrow onClick={() => onEnquire(item)}>
           Enquire
         </Button>

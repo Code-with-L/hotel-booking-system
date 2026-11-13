@@ -510,7 +510,27 @@
 .related__text { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; }
 
 /* ───────── Experiences ───────── */
-.exp-list .container > .demo-notice { margin-top: 0; }
+.exp-includes {
+  margin-top: 4px;
+}
+.exp-includes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gutter, clamp(20px, 4vw, 48px));
+  list-style: none;
+  margin: clamp(28px, 4vw, 44px) 0 0;
+  padding: 0;
+}
+.exp-includes-grid__item { display: flex; flex-direction: column; gap: 12px; }
+@media (max-width: 900px) {
+  .exp-includes-grid { grid-template-columns: 1fr; gap: 36px; }
+}
+.exp-practical-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gutter, 32px); margin-top: clamp(24px, 4vw, 44px); }
+.exp-practical-grid__item { display: flex; flex-direction: column; gap: 12px; }
+.exp-practical-note { margin-top: 36px; max-width: 62ch; opacity: 0.72; }
+@media (max-width: 900px) {
+  .exp-practical-grid { grid-template-columns: 1fr; gap: 32px; }
+}
 .exp {
   align-items: center;
   margin-bottom: clamp(80px, 10vw, 160px);
@@ -518,6 +538,17 @@
 .exp__media, .exp__text { grid-row: 1; }
 .exp__text { display: flex; flex-direction: column; gap: 20px; align-items: flex-start; }
 .exp__duration { padding-top: 4px; }
+.exp__includes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; margin-top: 2px; }
+.exp__includes li { position: relative; padding-left: 22px; font-size: 0.92rem; color: var(--ink-soft, var(--stone)); line-height: 1.5; }
+.exp__includes li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 10px;
+  height: 1px;
+  background: var(--terracotta);
+}
 .exp--a .exp__media { grid-column: 1 / 8; }
 .exp--a .exp__text { grid-column: 9 / 13; }
 .exp--b .exp__text { grid-column: 1 / 6; }

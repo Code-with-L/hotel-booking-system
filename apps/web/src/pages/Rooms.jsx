@@ -2,7 +2,7 @@ import PageHero from "@/components/editorial/PageHero.jsx";
 import AvailabilityBar from "@/components/booking/AvailabilityBar.jsx";
 import RoomListing from "@/components/rooms/RoomListing.jsx";
 import AmenityIcon from "@/components/rooms/AmenityIcon.jsx";
-import DemoNotice from "@/components/ui/DemoNotice.jsx";
+
 import ClosingCta from "@/components/editorial/ClosingCta.jsx";
 import { AMENITIES, ROOMS } from "@/data/rooms.js";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle.js";
@@ -43,9 +43,6 @@ export default function Rooms() {
               </li>
             ))}
           </ul>
-          <DemoNotice label="Sample specification">
-            These amenities, sizes and prices describe a concept property and are sample content. They are not confirmed hotel facilities or offers.
-          </DemoNotice>
         </div>
       </section>
 
@@ -53,3 +50,4 @@ export default function Rooms() {
     </>
   );
 }
+

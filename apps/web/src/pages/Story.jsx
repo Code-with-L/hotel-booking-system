@@ -1,7 +1,6 @@
 import PageHero from "@/components/editorial/PageHero.jsx";
 import SplitSection from "@/components/editorial/SplitSection.jsx";
 import ClosingCta from "@/components/editorial/ClosingCta.jsx";
-import DemoNotice from "@/components/ui/DemoNotice.jsx";
 import Media from "@/components/ui/Media.jsx";
 import { IMAGES } from "@/data/images.js";
 import { STORY_SECTIONS } from "@/data/story.js";
@@ -44,13 +43,10 @@ export default function Story() {
             <p className="eyebrow eyebrow--olive">Finding us</p>
             <h2 id="loc-title" className="h-lg">Above the valley, near Naivasha.</h2>
             <p className="body">
-              The Stillhouse is imagined in the highlands above Naivasha, Kenya, looking out across the Great Rift Valley. {SITE.coordinates} marks the general area only.
+              The Stillhouse sits in the highlands above Naivasha, Kenya, looking out across the Great Rift Valley. {SITE.coordinates} marks the general area only.
             </p>
-            <DemoNotice label="Concept property">
-              No street address is given because this is a concept property. This page does not describe a real operating hotel.
-            </DemoNotice>
           </div>
-          <div className="map-placeholder" role="img" aria-label="Map placeholder: interactive map to be integrated in a future version" data-reveal="text">
+          <div className="map-placeholder" data-reveal="text" role="link" aria-label="Open the Stillhouse location in Google Maps" onClick={() => window.open("https://www.google.com/maps/place/Naivasha,+Kenya", "_blank", "noopener")} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") window.open("https://www.google.com/maps/place/Naivasha,+Kenya", "_blank", "noopener"); }} tabIndex={0} style={{ cursor: "pointer" }}>
             <svg viewBox="0 0 600 420" preserveAspectRatio="none" aria-hidden="true">
               <defs>
                 <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -63,8 +59,8 @@ export default function Story() {
               <circle cx="330" cy="225" r="16" fill="none" stroke="#A66F56" strokeWidth="1" />
             </svg>
             <div className="map-placeholder__label">
-              <p className="eyebrow">Map placeholder</p>
-              <p className="small">Interactive map to be integrated in a future version.</p>
+              <p className="eyebrow">Get there</p>
+              <p className="small">About 2 h 30 from Nairobi via the Nairobi–Nakuru Highway. Open in Google Maps →</p>
             </div>
           </div>
         </div>
@@ -74,3 +70,5 @@ export default function Story() {
     </>
   );
 }
+
+

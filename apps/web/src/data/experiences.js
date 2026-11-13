@@ -1,67 +1,72 @@
-/**
- * Editorial experiences — DEMONSTRATION CONTENT.
- * Programmes, durations and availability are illustrative.
- */
+/** Experiences at The Stillhouse — curated programmes for guests. */
 import { IMAGES } from "./images.js";
 
 export const EXPERIENCES = [
   {
     id: "rift-valley",
-    homeTitle: "The Rift Valley",
-    title: "Discover the Rift Valley",
-    category: "Landscape",
-    duration: "Half day",
+    title: "Rift Valley escarpment tour",
+    category: "Signature day",
+    duration: "Half day · departs 06:30",
+    price: "KSh 14,500 per person",
     image: IMAGES.expValley,
     text:
-      "The escarpment, the lake and the long acacia plains are the reason the property exists. Time with a local guide begins at the edge of the site and moves outward at the pace of the conversation.",
+      "A private guide leads you from the gate to the escarpment rim, down through the acacia forest to the crater floor. Lake viewpoints, a shaded picnic lunch, and the silence of the Rift at its widest.",
+    includes: ["Private guide and vehicle", "Lake-view picnic lunch", "All park and picnic fees", "Return transfer to the house"],
   },
   {
     id: "nature",
-    homeTitle: "Outdoor exploration",
     title: "Nature and outdoor exploration",
     category: "Outdoors",
-    duration: "2–4 hours",
+    duration: "2–4 hours · any morning",
+    price: "Complimentary",
     image: IMAGES.expNature,
     text:
-      "Early walks along ridge paths, unhurried cycling through the surrounding countryside, and quiet time by the water. Routes are shaped around season, light and how far you want to go.",
+      "Guided walks along the ridge paths, unhurried cycling through the surrounding farmland, or a still hour by the water's edge. Routes change with the season and the light; tell us what the morning feels like and we'll shape one around you.",
+    includes: ["Route map or guide on request", "Bicycles and helmets", "Drinking water and kikoi", "Early or late departures"],
   },
   {
     id: "wellness",
-    homeTitle: "Wellness and restoration",
-    title: "Wellness and restoration",
+    title: "The Bath at Stillhouse",
     category: "Wellness",
     duration: "60–90 minutes",
+    price: "From KSh 12,000",
     image: IMAGES.expWellness,
     text:
-      "Treatments and rituals designed around rest rather than spectacle. Warm stone, natural oils, long silences. The emphasis is on arriving fully in the body, not on a menu of options.",
+      "Warm-stone rituals and long, quiet soaks prepared each morning with ingredients from the property's own garden — aloe, lemongrass, cold-pressed shea. No menus, no music, no hurry: just a deep recalibration in stone, oil and steam.",
+    includes: ["Aromatherapy or deep-tissue massage", "Eucalyptus steam room access", "Herbal infusions and fruit platter", "Private treatment garden"],
   },
   {
     id: "private",
-    homeTitle: "Private dining",
-    title: "Private experiences",
-    category: "Private",
-    duration: "Evening",
+    title: "Private evenings",
+    category: "Private dining",
+    duration: "Evening · by enquiry",
+    price: "KSh 28,000 per couple",
     image: IMAGES.expPrivate,
     text:
-      "A table set where you choose — on a terrace, in the garden or beneath the trees — with a menu composed for the occasion. Enquire early; these evenings are arranged individually.",
+      "A table set where you choose — on your terrace, under the acacias, or at the edge of the pool terrace. A menu written for the occasion, paired wines, and a kitchen that only ever cooks for one table.",
+    includes: ["Six-course tasting menu", "Paired wines or non-alcoholic pairing", "Champagne at dusk", "Private sommelier service"],
   },
   {
     id: "mornings",
     title: "Slow mornings",
     category: "Rest",
     duration: "Unscheduled",
+    price: "Inclusive",
     image: IMAGES.expMornings,
     text:
-      "Breakfast that waits for you rather than the reverse. Served in the restaurant, on your terrace or in bed, with no fixed hour to meet and nowhere you need to be afterwards.",
+      "Breakfast carried to wherever you'd like it — your terrace, the garden, or simply in bed. Eggs to order, honeys from the neighbouring farm, hot coffee pressed on the stove. The only timings are the birds'.",
+    includes: ["Terrace, garden or in-room breakfast", "Seasonal fruit and pastry basket", "Fresh-pressed juices", "Unhurried, whenever you wake"],
   },
   {
     id: "local",
     title: "Curated local discoveries",
     category: "Culture",
-    duration: "Half or full day",
+    duration: "Half / full day",
+    price: "From KSh 9,500 per person",
     image: IMAGES.expLocal,
     text:
-      "Makers, growers and places worth the journey, chosen by people who live here. A short list, deliberately — so each visit has the space to be a real encounter.",
+      "Makers, growers and quiet corners of Naivasha chosen by the people who live here — a flower farm at dawn, a farm-to-table lunch, a dairy tasting among the hills. Each trip is deliberately small, so every stop has room to breathe.",
+    includes: ["Private driver-guide", "Farm, flower-farm or dairy visits", "Local lunch included", "Seasonal itineraries"],
   },
 ];
 

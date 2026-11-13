@@ -76,7 +76,6 @@ export default function Availability() {
         </div>
 
         <p className="small">Live availability, computed by the hotel&apos;s reservation system for your dates.</p>
-        <p className="concept-note">The Stillhouse is a concept property. Names, prices, services, photos and reservation data shown here are illustrative and do not describe a real, operating hotel.</p>
 
         {!valid && (
           <p className="form-alert" role="alert">
@@ -118,3 +117,4 @@ export default function Availability() {
     </div>
   );
 }
+

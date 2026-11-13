@@ -1,4 +1,3 @@
-import ConceptNotice from "@/components/ui/ConceptNotice.jsx";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Printer } from "lucide-react";
@@ -90,9 +89,6 @@ export default function BookingConfirmation() {
               : "Your reservation is held for 15 minutes from the moment you confirmed. Your room is released if payment is not received in time. Settle at the front desk or by M-Pesa when available — quote your reference."}
           </p>
         </header>
-
-        <ConceptNotice />
-
         <div className="confirmation__grid">
           <div className="confirmation__ref">
             <p className="eyebrow">Booking reference</p>
@@ -165,3 +161,5 @@ export default function BookingConfirmation() {
     </div>
   );
 }
+
+

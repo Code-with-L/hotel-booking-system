@@ -1,4 +1,4 @@
-/** Dining content — DEMONSTRATION CONTENT. Hours are illustrative. */
+/** Dining content. */
 import { IMAGES } from "./images.js";
 
 export const MEALS = [

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import BookingSteps from "@/components/booking/BookingSteps.jsx";
 import BookingSummary from "@/components/booking/BookingSummary.jsx";
-import ConceptNotice from "@/components/ui/ConceptNotice.jsx";
 import { CheckField } from "@/components/forms/Fields.jsx";
 import Button from "@/components/ui/Button.jsx";
 import { useBooking } from "@/features/reservations/BookingContext.jsx";
@@ -76,8 +75,6 @@ export default function BookingReview() {
           <p className="eyebrow eyebrow--olive">Step 3</p>
           <h1 className="h-xl">Review your stay.</h1>
         </header>
-        <ConceptNotice />
-
         <div className="booking-layout">
           <div className="booking-form">
             <section className="review-block" aria-labelledby="rv-guest">
@@ -136,3 +133,5 @@ export default function BookingReview() {
     </div>
   );
 }
+
+

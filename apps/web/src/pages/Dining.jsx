@@ -2,7 +2,6 @@ import { useState } from "react";
 import PageHero from "@/components/editorial/PageHero.jsx";
 import SplitSection from "@/components/editorial/SplitSection.jsx";
 import EnquiryDialog from "@/components/forms/EnquiryDialog.jsx";
-import DemoNotice from "@/components/ui/DemoNotice.jsx";
 import Button from "@/components/ui/Button.jsx";
 import Media from "@/components/ui/Media.jsx";
 import { IMAGES } from "@/data/images.js";
@@ -66,9 +65,6 @@ export default function Dining() {
           <div data-reveal="text">
             <p className="eyebrow">Opening hours</p>
             <h2 id="hours-title" className="h-lg">Service times</h2>
-            <DemoNotice label="Illustrative hours">
-              These times are sample content for a concept property and are not confirmed opening hours.
-            </DemoNotice>
           </div>
           <div data-reveal="text">
             <dl className="hours__list">
@@ -88,3 +84,5 @@ export default function Dining() {
     </>
   );
 }
+
+

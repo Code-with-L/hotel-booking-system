@@ -2,6 +2,7 @@
 @import "./tokens.css";
 @import "./typography.css";
 @import "./global.css";
+@import "./skeleton.css";
 @import "./pages.css";
 @import "./booking.css";
 @import "./admin.css";

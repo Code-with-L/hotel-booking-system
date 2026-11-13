@@ -28,7 +28,7 @@ export const LEGAL = {
   privacy: {
     title: "Privacy policy",
     intro:
-      "The Stillhouse is a concept property. This policy describes how the reservation system handles guest data.",
+      "This policy explains how The Stillhouse collects, uses and protects your personal data when you book with us or contact us.",
     sections: [
       {
         heading: "What we collect",
@@ -50,17 +50,12 @@ export const LEGAL = {
   terms: {
     title: "Terms and conditions",
     intro:
-      "These terms govern reservations made with The Stillhouse. The Stillhouse is a concept property; imagery and descriptions are presented for a fictional boutique retreat in Kenya.",
+      "These terms govern reservations made with The Stillhouse.",
     sections: [
-      {
-        heading: "Concept property",
-        body:
-          "The Stillhouse is a concept property. Descriptions and imagery are presented for a fictional boutique retreat above the Rift Valley in Kenya.",
-      },
       {
         heading: "Rates and payment",
         body:
-          "All prices are shown in Kenyan shillings and include service charge, tourism levy and VAT as itemised at the time of booking. Payment is collected on arrival or by M-Pesa once configured.",
+          "All prices are shown in Kenyan shillings and include service charge, tourism levy and VAT as itemised at the time of booking. Payment is collected on arrival or by M-Pesa via the secure Daraja link once you confirm your booking.",
       },
       {
         heading: "Cancellation",

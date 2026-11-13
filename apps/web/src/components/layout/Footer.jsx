@@ -15,7 +15,6 @@ export default function Footer() {
                   WhatsApp {SITE.phone}
                 </a>
               </li>
-              <li className="footer-note">The Stillhouse is a fictional boutique retreat; imagery is illustrative.</li>
             </ul>
           </div>
           <div>
@@ -60,7 +59,7 @@ export default function Footer() {
         </div>
 
         <div className="footer-base">
-          <p className="meta">© {new Date().getFullYear()} The Stillhouse — a concept property above the Rift Valley.</p>
+          <p className="meta">© {new Date().getFullYear()} The Stillhouse — above the Rift Valley, Naivasha.</p>
           <p className="footer-legal meta">
             <Link to="/privacy">Privacy policy</Link>
             <Link to="/terms">Terms and conditions</Link>

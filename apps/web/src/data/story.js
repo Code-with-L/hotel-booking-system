@@ -8,7 +8,7 @@ export const STORY_SECTIONS = [
     title: "At the edge of the valley.",
     image: IMAGES.storyLocation,
     paragraphs: [
-      "The Stillhouse is imagined above Naivasha, where the land falls away toward the floor of the Great Rift Valley. Open plains, acacia and a long horizon define everything you see from the property.",
+      "The Stillhouse sits above Naivasha in the highlands, where the land falls away toward the floor of the Great Rift Valley. Open plains, acacia and a long horizon define everything you see from the property.",
       "The site was chosen for what it leaves out: no through-traffic, no neighbouring buildings, and a clear line to the escarpment.",
     ],
   },
