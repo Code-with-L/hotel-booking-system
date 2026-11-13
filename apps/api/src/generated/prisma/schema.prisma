@@ -1,0 +1,480 @@
+// The Stillhouse - Prisma schema (M1-A). See docs/DATABASE_DESIGN.md for rationale.
+// Money: Int minor units (KES cents). Dates: @db.Date. Room overlap prevention:
+// btree_gist + exclusion constraint created in the initial migration SQL (prisma-schema cannot express it).
+
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "client"
+  output     = "../apps/api/src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoomStatus {
+  active
+  out_of_service
+}
+
+enum RatePlanStatus {
+  active
+  scheduled
+  inactive
+}
+
+enum ReservationStatus {
+  pending
+  confirmed
+  checked_in
+  checked_out
+  cancelled
+  expired
+}
+
+enum PaymentStatus {
+  pending
+  succeeded
+  failed
+  refunded
+  partially_refunded
+}
+
+enum PaymentProvider {
+  mpesa
+  manual
+  card
+}
+
+enum ReservationSource {
+  web
+  admin
+  phone
+}
+
+enum UserStatus {
+  active
+  disabled
+}
+
+enum AllocationKind {
+  hold
+  reservation
+  block
+}
+
+enum AllocationState {
+  occupying
+  released
+  expired
+}
+
+model Hotel {
+  id          Int      @id @default(1) // singleton
+  name        String
+  legalName   String
+  address     String
+  location    String
+  phone       String
+  email       String
+  website     String
+  coordinates Json?
+  policies    Json
+  currency    String   @default("KES")
+  timezone    String   @default("Africa/Nairobi")
+  updatedAt   DateTime @updatedAt
+}
+
+model RoomType {
+  id             Int              @id @default(autoincrement())
+  slug           String           @unique
+  number         String
+  name           String
+  tagline        String
+  summary        String
+  description    String[]
+  sizeSqm        Int
+  maxAdults      Int
+  maxChildren    Int              @default(1)
+  bed            String
+  view           String
+  fromPriceMinor Int // per-night base for the standard rate (pre-tax, pre-fee)
+  currency       String           @default("KES")
+  unitCount      Int
+  amenities      String[]
+  features       String[]
+  reservations   Reservation[]
+  ratePlans      RatePlan[]
+  rateCards      RateCard[]
+  rooms          Room[]
+  blocks         InventoryBlock[]
+
+  @@map("room_type")
+}
+
+model Room {
+  id          BigInt            @id @default(autoincrement())
+  number      String
+  roomTypeId  Int
+  roomType    RoomType          @relation(fields: [roomTypeId], references: [id])
+  floor       String
+  status      RoomStatus        @default(active)
+  notes       String?
+  allocations ReservationRoom[]
+  ledger      RoomAllocation[]
+  blocks      InventoryBlock[]
+
+  @@unique([roomTypeId, number])
+  @@map("room")
+}
+
+model RatePlan {
+  id                  Int           @id @default(autoincrement())
+  roomTypeId          Int
+  roomType            RoomType      @relation(fields: [roomTypeId], references: [id])
+  key                 String // 'flexible' | 'advance'
+  name                String
+  summary             String
+  cancellationSummary String // shown at review/confirmation
+  cancellationPolicy  Json // { windowHours, penaltyPercent, refundable }
+  refundable          Boolean
+  multiplier          Float
+  sortOrder           Int           @default(0)
+  reservations        Reservation[]
+  cards               RateCard[]
+
+  @@unique([roomTypeId, key])
+  @@map("rate_plan")
+}
+
+model RateCard {
+  id           Int            @id @default(autoincrement())
+  roomTypeId   Int
+  roomType     RoomType       @relation(fields: [roomTypeId], references: [id])
+  ratePlanId   Int
+  ratePlan     RatePlan       @relation(fields: [ratePlanId], references: [id])
+  season       String
+  validFrom    DateTime       @db.Date
+  validTo      DateTime       @db.Date
+  nightlyMinor Int
+  status       RatePlanStatus @default(active)
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([roomTypeId, ratePlanId, season, validFrom])
+  @@index([ratePlanId, validFrom, validTo, status])
+  @@map("rate_card")
+}
+
+model Guest {
+  id               Int           @id @default(autoincrement())
+  firstName        String
+  lastName         String
+  email            String        @unique // citext via migration; uniqueness is case-insensitive in practice
+  phone            String
+  idNumber         String? // National ID or passport — required at booking for hotel guest registration (see DECISIONS.md D-062); never exposed to possession-of-reference reads
+  country          String
+  notes            String?
+  marketingConsent Boolean       @default(false)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  user             User?
+  reservations     Reservation[]
+
+  @@map("guest")
+}
+
+model User {
+  id           Int                  @id @default(autoincrement())
+  guestId      Int?                 @unique
+  guest        Guest?               @relation(fields: [guestId], references: [id])
+  email        String               @unique
+  passwordHash String
+  name         String
+  status       UserStatus           @default(active)
+  lastLoginAt  DateTime?
+  createdAt    DateTime             @default(now())
+  roles        UserRole[]
+  sessions     Session[]
+  resetTokens  PasswordResetToken[]
+  auditLogs    AuditLog[]
+
+  @@map("user")
+}
+
+model Role {
+  id    Int        @id @default(autoincrement())
+  key   String     @unique // guest | receptionist | manager | admin
+  label String
+  users UserRole[]
+
+  @@map("role")
+}
+
+model UserRole {
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId Int
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_role")
+}
+
+model Session {
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash        String   @unique
+  createdAt        DateTime @default(now())
+  lastSeenAt       DateTime @default(now())
+  expiresAt        DateTime
+  absoluteExpiryAt DateTime
+  ip               String?
+  userAgent        String?
+
+  @@index([userId])
+  @@map("session")
+}
+
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("password_reset_token")
+}
+
+model Reservation {
+  id                 Int               @id @default(autoincrement())
+  reference          String            @unique // STL-YYYY-NNNNNN, issued at creation
+  guestId            Int
+  guest              Guest             @relation(fields: [guestId], references: [id])
+  roomTypeId         Int
+  roomType           RoomType          @relation(fields: [roomTypeId], references: [id])
+  ratePlanId         Int
+  ratePlan           RatePlan          @relation(fields: [ratePlanId], references: [id])
+  status             ReservationStatus @default(pending)
+  checkIn            DateTime          @db.Date
+  checkOut           DateTime          @db.Date
+  nights             Int
+  adults             Int
+  children           Int               @default(0)
+  rooms              Int               @default(1)
+  // Price snapshot (minor units), captured server-side at creation
+  nightlyMinor       Int
+  subtotalMinor      Int
+  serviceChargeMinor Int
+  tourismLevyMinor   Int
+  vatMinor           Int
+  totalMinor         Int
+  currency           String            @default("KES")
+  specialRequests    String?
+  source             ReservationSource @default(web)
+  idempotencyKey     String            @unique
+  confirmedAt        DateTime?
+  cancelledAt        DateTime?
+  cancellationReason String?
+  cancelFeeMinor     Int?
+  checkedInAt        DateTime?
+  checkedOutAt       DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  roomsAssigned      ReservationRoom[]
+  payments           Payment[]
+  paymentAttempts    PaymentAttempt[]
+  taxInvoices        TaxInvoice[]
+
+  @@index([status, checkIn])
+  @@index([guestId])
+  @@index([checkIn, checkOut])
+  @@map("reservation")
+}
+
+model ReservationRoom {
+  id            Int         @id @default(autoincrement())
+  reservationId Int
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  roomId        BigInt
+  room          Room        @relation(fields: [roomId], references: [id])
+
+  @@unique([reservationId, roomId])
+  @@index([roomId])
+  @@map("reservation_room")
+}
+
+// Occupancy ledger - the single arbiter of room conflicts. See DATABASE_DESIGN.md §3.
+// Prisma stores plain dates; the exclusion constraint in the init migration uses
+// daterange(check_in, check_out, '[)') as an expression.
+model RoomAllocation {
+  id         BigInt          @id @default(autoincrement())
+  roomId     BigInt          @map("room_id")
+  room       Room            @relation(fields: [roomId], references: [id])
+  checkIn    DateTime        @map("check_in") @db.Date
+  checkOut   DateTime        @map("check_out") @db.Date
+  kind       AllocationKind
+  state      AllocationState @default(occupying)
+  sourceType String          @map("source_type")
+  sourceId   BigInt          @map("source_id")
+  expiresAt  DateTime?       @map("expires_at")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+
+  @@index([checkIn, checkOut])
+  @@index([sourceType, sourceId])
+  @@map("room_allocation")
+}
+
+model InventoryBlock {
+  id              BigInt   @id @default(autoincrement())
+  roomId          BigInt
+  room            Room     @relation(fields: [roomId], references: [id])
+  roomTypeId      Int
+  roomType        RoomType @relation(fields: [roomTypeId], references: [id])
+  checkIn         DateTime @db.Date
+  checkOut        DateTime @db.Date
+  kind            String   @default("maintenance")
+  reason          String?
+  createdByUserId Int?
+  createdAt       DateTime @default(now())
+
+  @@index([roomId, checkIn, checkOut])
+  @@map("inventory_block")
+}
+
+model Payment {
+  id                Int              @id @default(autoincrement())
+  reservationId     Int
+  reservation       Reservation      @relation(fields: [reservationId], references: [id])
+  provider          PaymentProvider
+  providerReference String?          @unique
+  amountMinor       Int
+  currency          String           @default("KES")
+  status            PaymentStatus    @default(pending)
+  capturedAt        DateTime?
+  failureReason     String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  attempts          PaymentAttempt[]
+
+  @@index([reservationId])
+  @@map("payment")
+}
+
+model PaymentAttempt {
+  id                Int             @id @default(autoincrement())
+  reservationId     Int?
+  reservation       Reservation?    @relation(fields: [reservationId], references: [id])
+  paymentId         Int?
+  payment           Payment?        @relation(fields: [paymentId], references: [id])
+  provider          PaymentProvider
+  providerReference String?
+  amountMinor       Int?
+  currency          String?
+  status            PaymentStatus
+  rawPayload        Json?
+  verified          Boolean         @default(false)
+  ip                String?
+  createdAt         DateTime        @default(now())
+
+  @@index([providerReference])
+  @@map("payment_attempt")
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  actorUserId Int?
+  actor       User?    @relation(fields: [actorUserId], references: [id])
+  action      String
+  entity      String
+  entityId    String?
+  before      Json?
+  after       Json?
+  ip          String?
+  createdAt   DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_log")
+}
+
+model Enquiry {
+  id        Int       @id @default(autoincrement())
+  kind      String // experience | dining
+  subject   String
+  name      String
+  email     String
+  date      DateTime? @db.Date
+  guests    Int       @default(2)
+  message   String
+  createdAt DateTime  @default(now())
+
+  @@map("enquiry")
+}
+
+model NewsletterSubscriber {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("newsletter_subscriber")
+}
+
+model EmailOutbox {
+  id                Int       @id @default(autoincrement())
+  dedupeKey         String    @unique // template + entity + purpose; prevents duplicate sends
+  to                String
+  template          String
+  subject           String
+  status            String    @default("pending") // pending | sent | failed | skipped
+  relatedType       String?
+  relatedId         String?
+  providerMessageId String?
+  error             String?
+  attempts          Int       @default(0)
+  createdAt         DateTime  @default(now())
+  sentAt            DateTime?
+
+  @@index([status, createdAt])
+  @@map("email_outbox")
+}
+
+model TaxInvoice {
+  id                    Int         @id @default(autoincrement())
+  reservationId         Int         @unique
+  reservation           Reservation @relation(fields: [reservationId], references: [id])
+  status                String      @default("skipped") // skipped | pending | issued | failed
+  receiptType           String      @default("S") // S=sale
+  receiptNumber         Int? // assigned by TIS when issued; uninterrupted ascending series
+  customerPin           String?
+  customerName          String?
+  totalMinor            Int
+  taxMinor              Int
+  currency              String      @default("KES")
+  etimsInvoiceNumber    String?
+  etimsReceiptSignature String?
+  etimsInternalData     String?
+  etimsResponseRaw      Json?
+  attempts              Int         @default(0)
+  lastError             String?
+  createdAt             DateTime    @default(now())
+  issuedAt              DateTime?
+
+  @@unique([receiptType, receiptNumber])
+  @@index([reservationId])
+  @@index([status])
+  @@map("tax_invoice")
+}
+
+model Setting {
+  key             String   @id
+  value           Json
+  updatedAt       DateTime @updatedAt
+  updatedByUserId Int?
+
+  @@map("setting")
+}
