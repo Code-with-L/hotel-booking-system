@@ -243,6 +243,66 @@
 }
 .arch__side .lede { color: rgba(241, 239, 232, 0.88); }
 
+/* ───────── Manifesto ───────── */
+.manifesto { padding-block: clamp(32px, 5vw, 64px); }
+.manifesto__eyebrow { margin-bottom: 10px; }
+.manifesto__line {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 3vw, 2.1rem);
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--ink);
+  max-width: 46ch;
+}
+
+/* ───────── Home rooms cards ───────── */
+.home-room-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(20px, 2.4vw, 32px); list-style: none; padding: 0; margin: 0; }
+.home-room-card { background: var(--limestone); border: 1px solid var(--border); overflow: hidden; }
+.home-room-card__link { display: block; color: inherit; text-decoration: none; }
+.home-room-card__link:focus-visible { outline: 2px solid var(--olive); outline-offset: 3px; }
+.home-room-card__body { padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 8px; }
+.home-room-card__name { font-family: var(--font-display); font-size: clamp(1.35rem, 1.9vw, 1.7rem); color: var(--ink); }
+.home-room-card__tagline { font-size: 0.92rem; color: var(--stone); line-height: 1.5; }
+.home-room-card__foot { display: flex; align-items: baseline; gap: 12px; margin-top: 4px; border-top: 1px solid var(--border); padding-top: 12px; }
+.home-room-card__foot .price { font-family: var(--font-display); font-size: 1.15rem; color: var(--ink); }
+.home-room-card__cta { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--terracotta); margin-left: auto; white-space: nowrap; }
+@media (max-width: 900px) {
+  .home-room-cards { grid-template-columns: 1fr; }
+}
+
+/* ───────── Home experiences ───────── */
+.home-exp-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(18px, 2vw, 28px); list-style: none; padding: 0; margin: 0; }
+.home-exp-item a { display: block; color: inherit; text-decoration: none; background: var(--limestone); border: 1px solid var(--border); }
+.home-exp-item a:focus-visible { outline: 2px solid var(--olive); outline-offset: 3px; }
+.home-exp-item__num { display: block; font-family: var(--font-display); font-size: 0.8rem; letter-spacing: 0.2em; color: var(--terracotta); padding: 12px 14px 0; }
+.home-exp-item__text { padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+@media (max-width: 1024px) {
+  .home-exp-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .home-exp-list { grid-template-columns: 1fr; }
+}
+
+/* ───────── Spec strip ───────── */
+.spec-strip { background: var(--charcoal, #242722); color: var(--warm-white, #f1efe8); padding-block: clamp(40px, 6vw, 72px); }
+.spec-strip__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gutter, 32px); text-align: center; }
+.spec-strip__grid .numeral { font-family: var(--font-display); font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 400; line-height: 1; display: block; }
+.spec-strip__grid dd { margin-top: 10px; font-family: var(--font-sans); font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(241,239,232,0.75); }
+.spec-strip__unit { font-size: 0.38em; vertical-align: super; }
+@media (max-width: 640px) {
+  .spec-strip__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 40px; }
+}
+
+/* ───────── Booking band ───────── */
+.booking-band { background: var(--parchment); }
+.booking-band__inner { display: grid; grid-template-columns: 2fr 1fr; gap: var(--gutter, 32px); align-items: center; }
+.booking-band__inner .body { max-width: 52ch; margin-top: 14px; }
+.booking-band__inner .btn { justify-self: end; }
+@media (max-width: 900px) {
+  .booking-band__inner { grid-template-columns: 1fr; }
+  .booking-band__inner .btn { justify-self: start; }
+}
+
 /* ───────── Experiences (home) ───────── */
 .exp-home {
   row-gap: clamp(48px, 6vw, 96px);
