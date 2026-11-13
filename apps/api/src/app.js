@@ -1,15 +1,14 @@
 // Express app wiring. Same-origin in production (web served separately or behind proxy);
 // in dev, Vite proxies /api -> this server, also same-origin from the browser's perspective.
 import express from 'express';
-import { createRequire } from 'node:module';
-// Vercel's file tracer does not follow dynamic fs reads, so the Prisma Wasm
-// query compiler would be missing from the function bundle (ENOENT at runtime).
-// resolve() only checks the path and never loads the module; it tells the tracer to include the file.
-const tracerHint = createRequire(import.meta.url);
+import { readFileSync } from 'node:fs';
+// Vercel's Node File Trace inspects import/require/fs usage, not require.resolve.
+// A literal fs read of the Prisma Wasm query compiler makes the tracer include the file in the function bundle;
+// without this, every query against the database crashes with ENOENT on serverless.
 try {
-  tracerHint.resolve('../generated/prisma/query_compiler_bg.wasm');
+  readFileSync(new URL('../generated/prisma/query_compiler_bg.wasm', import.meta.url));
 } catch {
-  // engine generated at build time on Vercel; resolve failure is non-fatal
+  // engine generated at build time in some environments; absence here is non-fatal at import time
 }
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
