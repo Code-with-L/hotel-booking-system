@@ -803,8 +803,8 @@ a:hover > .media--zoom img {
 }
 .nf-card {
   position: absolute;
-  left: 50%;
-  top: 50%;
+  left: var(--sx);
+  top: var(--sy);
   width: clamp(64px, 9.5vmin, 96px);
   height: clamp(84px, 12.5vmin, 126px);
   object-fit: cover;
@@ -812,10 +812,13 @@ a:hover > .media--zoom img {
   border: 3px solid #ffffff;
   box-shadow: 0 18px 34px rgba(23, 24, 26, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   opacity: 0;
-  transform: translate(-50%, -50%) translate(var(--sx), var(--sy)) rotate(var(--rot)) scale(0.4);
-  transition: transform 1.15s cubic-bezier(0.22, 0.61, 0.2, 1), opacity 0.6s ease;
+  transform: translate(-50%, -50%) rotate(var(--rot)) scale(0.4);
+  transition: left 1.15s cubic-bezier(0.22, 0.61, 0.2, 1),
+              top 1.15s cubic-bezier(0.22, 0.61, 0.2, 1),
+              transform 1.15s cubic-bezier(0.22, 0.61, 0.2, 1),
+              opacity 0.6s ease;
   animation: nf-fade 0.8s ease backwards;
-  will-change: transform;
+  will-change: left, top, transform;
   user-select: none;
   pointer-events: none;
 }
@@ -824,7 +827,9 @@ a:hover > .media--zoom img {
   to   { opacity: 1; }
 }
 .phase--ring .nf-card, .phase--reveal .nf-card {
-  transform: translate(-50%, -50%) translate(calc(var(--cos) * 34vmin), calc(var(--sin) * 34vmin)) rotate(0deg) scale(1);
+  left: calc(50% + var(--cos) * 34vmin);
+  top: calc(50% + var(--sin) * 34vmin);
+  transform: translate(-50%, -50%) scale(1);
 }
 .nf__content {
   position: relative;
