@@ -18,6 +18,7 @@ export default function AvailabilitySection({
   title = "Book your room.",
   lede,
   Heading = "h1",
+  showSteps = true,
 }) {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
@@ -57,7 +58,7 @@ export default function AvailabilitySection({
 
   return (
     <>
-      <BookingSteps current={0} />
+      {showSteps && <BookingSteps current={0} />}
       <header className="booking-head">
         <p className="eyebrow eyebrow--olive">Availability</p>
         <Heading className="h-xl">{title}</Heading>

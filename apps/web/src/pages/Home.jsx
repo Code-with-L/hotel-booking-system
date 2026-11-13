@@ -4,7 +4,6 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle.js";
 import { IMAGES } from "@/data/images.js";
 import { ROOMS } from "@/data/rooms.js";
 import { SITE } from "@/data/site.js";
-import { EXPERIENCES } from "@/data/experiences.js";
 import Button, { ArrowLink } from "@/components/ui/Button.jsx";
 import AvailabilitySection from "@/features/availability/AvailabilitySection.jsx";
 import Media from "@/components/ui/Media.jsx";
@@ -74,7 +73,7 @@ export default function Home() {
       {/* BOOKING FLOW — search, rooms and selection live on the homepage */}
       <section className="section booking-page section--flush-top" id="book" aria-labelledby="book-title">
         <div className="container">
-          <AvailabilitySection Heading="h2" />
+          <AvailabilitySection Heading="h2" showSteps={false} />
         </div>
       </section>
 
@@ -124,34 +123,6 @@ export default function Home() {
             </p>
             <p className="meta">Breakfast 07:00–10:30 · Lunch 12:30–15:00 · Dinner 19:00–23:00</p>
             <ArrowLink to="/dining">View the menu &amp; reservation</ArrowLink>
-          </div>
-        </div>
-      </section>
-
-      {/* EXPERIENCES — four, numbered, in sequence */}
-      <section className="section" aria-labelledby="home-exp-title">
-        <div className="container">
-          <div className="section-head">
-            <p className="eyebrow eyebrow--olive">Beyond the room</p>
-            <h2 id="home-exp-title" className="h-lg">Days the valley gives back.</h2>
-          </div>
-          <ol className="home-exp-list">
-            {EXPERIENCES.slice(0, 4).map((item, i) => (
-              <li key={item.id} className="home-exp-item">
-                <Link to={`/experiences#${item.id}`}>
-                  <span className="home-exp-item__num">0{i + 1}</span>
-                  <Media photo={item.image} ratio="4 / 3" zoom sizes="(min-width: 1025px) 28vw, (min-width: 640px) 44vw, 100vw" />
-                  <div className="home-exp-item__text">
-                    <p className="eyebrow eyebrow--terra">{item.category}</p>
-                    <h3 className="h-sm">{item.title}</h3>
-                    <p className="small">{item.duration} · {item.price}</p>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ol>
-          <div style={{ marginTop: "clamp(32px, 4vw, 56px)" }}>
-            <ArrowLink to="/experiences">Explore all experiences</ArrowLink>
           </div>
         </div>
       </section>
