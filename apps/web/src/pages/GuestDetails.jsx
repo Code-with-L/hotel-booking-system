@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import BookingSteps from "@/components/booking/BookingSteps.jsx";
 import BookingSummary from "@/components/booking/BookingSummary.jsx";
+import ConceptNotice from "@/components/ui/ConceptNotice.jsx";
 import { CheckField, TextField } from "@/components/forms/Fields.jsx";
 import Button from "@/components/ui/Button.jsx";
 import { useBooking } from "@/features/reservations/BookingContext.jsx";
@@ -29,7 +30,6 @@ export default function GuestDetails() {
       idNumber: guest?.idNumber || "",
       phone: stripLeading254(account?.phone),
       country: "Kenya",
-      requests: "",
       privacy: false,
     }
   );
@@ -105,6 +105,7 @@ export default function GuestDetails() {
           <p className="eyebrow eyebrow--olive">Step 2</p>
           <h1 className="h-xl">Who is staying?</h1>
         </header>
+        <ConceptNotice />
 
         <div className="booking-layout">
           <form onSubmit={submit} noValidate className="booking-form" aria-describedby={errorCount ? "form-errors" : undefined}>

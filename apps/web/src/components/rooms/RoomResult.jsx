@@ -30,6 +30,8 @@ export default function RoomResult({ result, nights, onSelect }) {
                 <div className="plan__info">
                   <h3 className="plan__name">{plan.name}</h3>
                   <p className="small">{plan.summary}</p>
+                  <p className="small plan__terms">{plan.cancellation}</p>
+                  {plan.prepayment && <p className="small plan__nonrefundable">{plan.prepayment}</p>}
                 </div>
                 <div className="plan__price">
                   <p className="price plan__nightly">

@@ -1,3 +1,4 @@
+import ConceptNotice from "@/components/ui/ConceptNotice.jsx";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Printer } from "lucide-react";
@@ -18,6 +19,16 @@ export default function BookingConfirmation() {
   const [reservation] = useState(getLastReservation);
   const [payStatus, setPayStatus] = useState("idle");
   const [payError, setPayError] = useState("");
+  const [now, setNow] = useState(() => Date.now());
+
+  // Live countdown against the server-issued hold expiry, when present.
+  const holdExpiresAt = reservation?.holdExpiresAt ? new Date(reservation.holdExpiresAt) : null;
+  useEffect(() => {
+    if (!holdExpiresAt || reservation?.status === "confirmed") return undefined;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [holdExpiresAt?.getTime(), reservation?.status]);
 
   // The draft has been converted to a reservation; reset it.
   useEffect(() => {
@@ -75,16 +86,30 @@ export default function BookingConfirmation() {
           <h1 className="display">{confirmed ? "Your room is confirmed." : "Your stay is held."}</h1>
           <p className="lede">
             {confirmed
-              ? "Payment received. We look forward to welcoming you. A confirmation email is on its way if email is configured."
-              : "Your reservation is held for the next 15 minutes. Your room is released if payment is not received in time. Settle at the front desk or by M-Pesa when available — quote your reference."}
+              ? "Payment received. We look forward to welcoming you. If the hotel cannot reach you by email, someone will confirm your stay directly with you."
+              : "Your reservation is held for 15 minutes from the moment you confirmed. Your room is released if payment is not received in time. Settle at the front desk or by M-Pesa when available — quote your reference."}
           </p>
         </header>
+
+        <ConceptNotice />
 
         <div className="confirmation__grid">
           <div className="confirmation__ref">
             <p className="eyebrow">Booking reference</p>
             <p className="numeral confirmation__code">{reservation.reference}</p>
             <p className="small">Keep this reference. You will need it at the front desk and for any amendments.</p>
+            {!confirmed && holdExpiresAt && (() => {
+              const secondsLeft = Math.max(0, Math.round((holdExpiresAt.getTime() - now) / 1000));
+              const mins = Math.floor(secondsLeft / 60);
+              const secs = secondsLeft % 60;
+              return (
+                <p className="hold-timer" role="timer" aria-live="polite">
+                  {secondsLeft > 0
+                    ? `Room held for a further ${mins}m ${String(secs).padStart(2, "0")}s.`
+                    : "Hold expired - the property may need to reassign your room on arrival."}
+                </p>
+              );
+            })()}
             {room && <Media photo={room.hero} ratio="4 / 3" reveal={false} sizes="(min-width: 1025px) 40vw, 100vw" />}
           </div>
 

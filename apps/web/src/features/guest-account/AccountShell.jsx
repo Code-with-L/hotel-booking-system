@@ -4,6 +4,9 @@ import { LogOut } from "lucide-react";
 import { useAuth } from "./AuthContext.jsx";
 import { TextField } from "@/components/forms/Fields.jsx";
 import Button from "@/components/ui/Button.jsx";
+import { request, minorToMajor } from "@/services/api.js";
+import { formatKsh } from "@/utils/format.js";
+import { formatDateLong } from "@/utils/dates.js";
 
 const OAUTH_ERRORS = {
   "google-not-configured": "Google sign-in is not configured yet. Use your email and password above.",
@@ -18,6 +21,50 @@ const GoogleGlyph = () => (
     <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 .96 4.97l2.98 2.33C4.65 5.17 6.65 3.58 9 3.58z"/>
   </svg>
 );
+
+function ReservationLookup() {
+  const [reference, setReference] = useState("");
+  const [email, setEmail] = useState("");
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setBusy(true); setError(""); setResult(null);
+    try {
+      const data = await request(`/reservations/${encodeURIComponent(reference.trim())}?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+      setResult(data);
+    } catch (err) {
+      setError(err?.status === 404 || err?.status === 403
+        ? "No reservation found for that reference and email address."
+        : "Could not check that reservation right now.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="lookup">
+      <p className="eyebrow">Track my booking</p>
+      <p className="small">Reserved without an account? Enter the booking reference and the email you used and we&apos;ll show the booking&apos;s status.</p>
+      <form className="lookup__form" onSubmit={submit} noValidate>
+        <TextField id="lookup-reference" label="Booking reference" autoComplete="off" placeholder="STL-2026-…" value={reference} onChange={(e) => setReference(e.target.value)} required />
+        <TextField id="lookup-email" label="Email used for the booking" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        {error && <p className="form-alert" role="alert">{error}</p>}
+        <Button type="submit" variant="text" disabled={busy || !reference.trim() || !email.trim()}>{busy ? "Checking…" : "Check booking"}</Button>
+      </form>
+      {result && (
+        <div className="lookup__result" aria-live="polite">
+          <p className="eyebrow">{result.reference}</p>
+          <p className="lede">{result.room?.name} · {formatDateLong(result.checkIn)} – {formatDateLong(result.checkOut)}</p>
+          <p className="small">Status: <strong>{result.status}</strong> · Total {formatKsh(minorToMajor(result.pricing?.totalMinor || 0))}</p>
+          <p className="small">Sign in above with this email to see full details, or message the front desk on WhatsApp with this reference.</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SignInPanel() {
   const { signIn } = useAuth();
@@ -56,6 +103,7 @@ function SignInPanel() {
         </a>
         {oauthError && <p className="form-alert" role="alert">{OAUTH_ERRORS[oauthError] || "Google sign-in failed."}</p>}
       </div>
+      <ReservationLookup />
     </div>
   );
 }

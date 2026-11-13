@@ -49,7 +49,7 @@ export const STORY_SECTIONS = [
     image: IMAGES.storyPhilosophy,
     paragraphs: [
       "Good service is mostly invisible. It is the table already set, the room already warm, the question answered before it is asked.",
-      "With only thirty-two rooms, staff know guests by name and by preference. Our job is to give you time — and then to leave you alone with it.",
+      "With only twenty-eight rooms, staff know guests by name and by preference. Our job is to give you time — and then to leave you alone with it.",
     ],
   },
 ];

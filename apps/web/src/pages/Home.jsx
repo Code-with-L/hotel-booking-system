@@ -62,7 +62,7 @@ export default function Home() {
                 <span className="line"><span data-hero-line>stillness and <em>discovery.</em></span></span>
               </h1>
               <p className="lede hero__text" data-hero-text>
-                A 32-room retreat above the Rift Valley. Pick your dates, see the room and the price, and hold it.
+                A 28-room retreat above the Rift Valley. Pick your dates, see the room and the price, and hold it.
               </p>
               <div className="hero__ctas">
                 <Button to="/availability" variant="light" arrow data-hero-cta>
@@ -94,7 +94,7 @@ export default function Home() {
           <div className="section-head section-head--row">
             <div>
 
-              <h2 id="rooms-title" className="h-lg">Four expressions,<br />thirty-two rooms.</h2>
+              <h2 id="rooms-title" className="h-lg">Three expressions,<br />twenty-eight rooms.</h2>
             </div>
             <ArrowLink to="/rooms">All rooms &amp; rates</ArrowLink>
           </div>

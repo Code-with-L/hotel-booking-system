@@ -12,7 +12,7 @@ export async function searchAvailability({ checkIn, checkOut, adults = 2, childr
   const data = await request(`/availability?${query.toString()}`);
   return {
     nights: data.nights,
-    results: data.results.map((r) => ({
+    results: data.results.filter((r) => bySlug[r.roomTypeSlug]).map((r) => ({
       room: bySlug[r.roomTypeSlug],
       available: r.available,
       reason: r.reason || "",

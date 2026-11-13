@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import AvailabilityBar, { searchToQuery } from "@/components/booking/AvailabilityBar.jsx";
 import BookingSteps from "@/components/booking/BookingSteps.jsx";
@@ -20,7 +20,8 @@ export default function Availability() {
   const current = useMemo(() => parseSearchParams(params) || search, [params, search]);
   const errors = validateSearch(current);
   const valid = Object.keys(errors).length === 0;
-  const { loading, data } = useAvailability(current, valid);
+  const [retryNonce, setRetryNonce] = useState(0);
+  const { loading, data, error } = useAvailability(current, valid, retryNonce);
 
   // Keep the booking draft in step with the URL.
   useEffect(() => {
@@ -75,6 +76,7 @@ export default function Availability() {
         </div>
 
         <p className="small">Live availability, computed by the hotel&apos;s reservation system for your dates.</p>
+        <p className="concept-note">The Stillhouse is a concept property. Names, prices, services, photos and reservation data shown here are illustrative and do not describe a real, operating hotel.</p>
 
         {!valid && (
           <p className="form-alert" role="alert">
@@ -91,7 +93,21 @@ export default function Availability() {
           </div>
         )}
 
-        {valid && !loading && (
+        {valid && !loading && error && (
+          <div className="form-alert" role="alert">
+            <p><strong>We couldn&apos;t load live availability right now.</strong> Please check your connection and try again.</p>
+            <button type="button" className="btn btn--outline btn--sm" onClick={() => setRetryNonce((n) => n + 1)}>Try again</button>
+          </div>
+        )}
+
+        {valid && !loading && !error && data && results.length === 0 && (
+          <div className="empty-state" role="status">
+            <h2 className="h-lg">Fully booked for those dates.</h2>
+            <p className="lede">Every existing room in the property is taken (or blocked for maintenance) for your dates. Try adjusting your dates, party size, or contact the front desk on WhatsApp and we&apos;ll see what can be done.</p>
+          </div>
+        )}
+
+        {valid && !loading && !error && data && results.length > 0 && (
           <div className="results">
             {results.map((r) => (
               <RoomResult key={r.room.slug} result={r} nights={nights} onSelect={select} />

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import BookingSteps from "@/components/booking/BookingSteps.jsx";
 import BookingSummary from "@/components/booking/BookingSummary.jsx";
+import ConceptNotice from "@/components/ui/ConceptNotice.jsx";
 import { CheckField } from "@/components/forms/Fields.jsx";
 import Button from "@/components/ui/Button.jsx";
 import { useBooking } from "@/features/reservations/BookingContext.jsx";
@@ -75,6 +76,7 @@ export default function BookingReview() {
           <p className="eyebrow eyebrow--olive">Step 3</p>
           <h1 className="h-xl">Review your stay.</h1>
         </header>
+        <ConceptNotice />
 
         <div className="booking-layout">
           <div className="booking-form">
@@ -115,8 +117,7 @@ export default function BookingReview() {
             </section>
 
             <p className="small">
-              Your room is held for 15 minutes after you confirm. Payment is settled on arrival or by M-Pesa once
-              configured — the front desk will confirm payment with you.
+              Your room is held for 15 minutes after you confirm. Payment is settled on arrival, or by M-Pesa where the property has digital payment enabled — the front desk will confirm payment with you either way.
             </p>
 
             <CheckField id="review-ack" checked={ack} onChange={(e) => { setAck(e.target.checked); setError(""); }} error={error}>
@@ -125,7 +126,7 @@ export default function BookingReview() {
 
             <div className="form-actions">
               <Button to="/booking/guest-details" variant="text">Back</Button>
-              <Button arrow onClick={submit} disabled={busy || !quote}>{busy ? "Confirming..." : "Proceed to payment"}</Button>
+              <Button arrow onClick={submit} disabled={busy || !quote}>{busy ? "Confirming..." : "Confirm booking"}</Button>
             </div>
           </div>
 

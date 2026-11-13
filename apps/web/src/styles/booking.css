@@ -314,6 +314,9 @@
   font-weight: 500;
   margin-bottom: 4px;
 }
+.hold-timer { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--terracotta); font-weight: 600; margin: 10px 0 0; }
+.plan__terms { color: var(--ink); font-weight: 500; margin-top: 4px; }
+.plan__nonrefundable { color: var(--terracotta); font-weight: 600; margin-top: 4px; }
 .plan__nightly {
   font-size: 20px;
 }

@@ -12,7 +12,7 @@ export default function ClosingCta({ title = "Your time, uninterrupted.", cta = 
           <Button to={to} variant="light" arrow>
             {cta}
           </Button>
-          <p className="small">Thirty-two rooms. No rush.</p>
+          <p className="small">Twenty-eight rooms. No rush.</p>
         </div>
       </div>
     </section>

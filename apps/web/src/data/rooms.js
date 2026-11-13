@@ -38,33 +38,6 @@ export const RATE_PLANS = [
 
 export const ROOMS = [
   {
-    slug: "stone-cottage",
-    number: "04",
-    name: "The Stone Cottage",
-    tagline: "A stone room at the edge of the garden.",
-    summary:
-      "A compact stone cottage at the garden's edge - low, cool and quiet, with a queen bed in natural linen and an outlook over the pool terrace.",
-    description: [
-      "The Stone Cottage is the property's most intimate room. Stone walls, a low timber ceiling and filtered light make it the quietest room in which to wake up.",
-      "It is furnished with the same pared-back discipline as the rest of the property: a queen bed in linen, a chair that reads into the garden, and a bathroom finished in pale stone.",
-    ],
-    size: 34,
-    occupancy: { adults: 2, label: "2 adults" },
-    bed: "One queen bed",
-    view: "Stone garden and pool terrace",
-    fromPrice: 24500,
-    unitCount: 4,
-    hero: IMAGES.stoneHero,
-    gallery: [IMAGES.stoneHero, IMAGES.stoneA, IMAGES.stoneB, IMAGES.stoneC],
-    amenities: ["bed", "terrace", "shower", "climate", "wifi", "refreshments"],
-    features: [
-      "Stone walls and a low timber ceiling",
-      "Direct access from the garden path",
-      "Queen bed dressed in natural linen",
-      "Reading corner oriented toward the garden",
-    ],
-  },
-  {
     slug: "garden-room",
     number: "01",
     name: "The Garden Room",
