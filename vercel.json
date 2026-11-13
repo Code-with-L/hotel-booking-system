@@ -9,16 +9,19 @@
       "root": "apps/api",
       "framework": "express",
       "installCommand": "cd ../.. && npm ci --workspace=@stillhouse/api",
-      "buildCommand": "cd ../.. && npx prisma generate"
+      "buildCommand": "cd ../.. && npx prisma generate",
+      "functions": {
+        "src/app.js": {
+          "includeFiles": "src/generated/prisma/**"
+        },
+        "apps/api/src/app.js": {
+          "includeFiles": "apps/api/src/generated/prisma/**"
+        }
+      }
     }
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": { "service": "api" } },
     { "source": "/(.*)", "destination": { "service": "web" } }
-  ],
-  "functions": {
-    "apps/api/src/app.js": {
-      "includeFiles": "apps/api/src/generated/prisma/**"
-    }
-  }
+  ]
 }
