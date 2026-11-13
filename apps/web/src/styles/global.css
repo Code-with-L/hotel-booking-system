@@ -781,63 +781,109 @@ a:hover > .media--zoom img {
   margin: 16px 0 28px;
 }
 
-/* ---------- 404 — video backdrop ---------- */
+/* ---------- 404 — floating-card ring (visual recreation of the motion intro) ---------- */
 .nf {
   position: relative;
   min-height: 100svh;
-  display: flex;
-  align-items: center;
   overflow: hidden;
-  background: #101310;
+  background: #f4f2ed;
+  color: #17181a;
 }
-.nf__video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 0;
-}
-.nf__scrim {
+.nf__ring {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(90deg, rgba(10, 12, 10, 0.88) 0%, rgba(10, 12, 10, 0.62) 45%, rgba(10, 12, 10, 0.15) 100%),
-              linear-gradient(180deg, rgba(10, 12, 10, 0.35) 0%, rgba(10, 12, 10, 0) 40%, rgba(10, 12, 10, 0.55) 100%);
+  transform-origin: 50% 50%;
+}
+.nf__ring.is-spinning {
+  animation: nf-spin 70s linear infinite;
+}
+@keyframes nf-spin {
+  to { transform: rotate(360deg); }
+}
+.nf-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: clamp(64px, 9.5vmin, 96px);
+  height: clamp(84px, 12.5vmin, 126px);
+  object-fit: cover;
+  border-radius: 14px;
+  border: 3px solid #ffffff;
+  box-shadow: 0 18px 34px rgba(23, 24, 26, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  opacity: 0;
+  transform: translate(-50%, -50%) translate(var(--sx), var(--sy)) rotate(var(--rot)) scale(0.4);
+  transition: transform 1.15s cubic-bezier(0.22, 0.61, 0.2, 1), opacity 0.6s ease;
+  animation: nf-fade 0.8s ease backwards;
+  will-change: transform;
+  user-select: none;
+  pointer-events: none;
+}
+@keyframes nf-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.phase--ring .nf-card, .phase--reveal .nf-card {
+  transform: translate(-50%, -50%) translate(calc(var(--cos) * 34vmin), calc(var(--sin) * 34vmin)) rotate(0deg) scale(1);
 }
 .nf__content {
   position: relative;
   z-index: 2;
-  color: #f4f4ef;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   padding-block: clamp(48px, 8vw, 96px);
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s ease 0.1s, transform 0.7s ease 0.1s;
+  pointer-events: none;
+}
+.phase--reveal .nf__content {
+  opacity: 1;
+  transform: translateY(0);
+}
+.nf__content .hero-actions,
+.nf__content .Button,
+.nf__content a {
+  pointer-events: auto;
 }
 .nf__code {
   font-family: var(--font-display);
-  font-size: clamp(9rem, 26vw, 18rem);
+  font-size: clamp(7rem, 24vmin, 14rem);
   line-height: 0.9;
   letter-spacing: -0.04em;
   margin: 0;
-  color: #f4f4ef;
-  text-shadow: 0 4px 60px rgba(0, 0, 0, 0.45);
-}
-.nf__title {
-  font-family: var(--font-display);
-  font-size: clamp(1.6rem, 4.2vw, 3rem);
-  line-height: 1.1;
-  max-width: 22ch;
-  margin: clamp(8px, 1.5vw, 20px) 0 0;
+  color: #17181a;
 }
 .nf__lede {
-  color: rgba(244, 244, 239, 0.85);
-  margin-top: clamp(12px, 2vw, 24px);
-  max-width: 44ch;
+  margin-top: clamp(10px, 1.6vw, 20px);
+  font-size: clamp(0.75rem, 1.6vmin, 0.95rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(23, 24, 26, 0.62);
+  max-width: 46ch;
+}
+.nf__actions {
+  margin-top: clamp(18px, 3vw, 34px);
 }
 @media (max-width: 720px) {
-  .nf__scrim {
-    background: linear-gradient(180deg, rgba(10, 12, 10, 0.45) 0%, rgba(10, 12, 10, 0.3) 45%, rgba(10, 12, 10, 0.88) 100%);
+  .nf-card {
+    width: 15vw;
+    height: 19vw;
+    border-radius: 12px;
   }
-  .nf__lede {
-    color: rgba(244, 244, 239, 0.92);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nf-card, .nf__ring, .nf__content {
+    animation: none !important;
+    transition: none !important;
+  }
+  .phase--scatter .nf__content, .nf__content {
+    opacity: 1;
+    transform: none;
   }
 }
 
