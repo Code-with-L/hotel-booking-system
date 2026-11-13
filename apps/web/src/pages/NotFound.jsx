@@ -28,7 +28,7 @@ export default function NotFound() {
       const angle = (i / CARD_COUNT) * Math.PI * 2;
       return {
         id: i,
-        src: `/photos/${PHOTOS[i % PHOTOS.length]}-480.jpeg`,
+        src: `/photos/${PHOTOS[i % PHOTOS.length]}-480.webp`,
         // scattered start positions (percent of stage)
         sx: 4 + rand() * 92,
         sy: 8 + rand() * 62,

@@ -90,7 +90,7 @@ export default function Home() {
           <ul className="room-cards" >
             {ROOMS.map((room) => (
               <li key={room.slug} className="room-card">
-                <Link to={`/rooms/${room.slug}`} className="room-card__link" aria-label={`Explore ${room.name}`}>
+                <Link to={`/rooms/${room.slug}`} className="room-card__link">
                   <div className="room-card__image">
                     <Media photo={room.hero} ratio="4 / 3" zoom sizes="(min-width: 1025px) 33vw, (min-width: 640px) 50vw, 100vw" />
                   </div>

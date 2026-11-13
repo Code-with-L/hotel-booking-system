@@ -11,10 +11,10 @@ const HOST = "/photos";
 const FAMILY = [480, 768, 1280, 1600, 1920];
 const nearest = (w) => FAMILY.reduce((a, b) => (Math.abs(b - w) < Math.abs(a - w) ? b : a));
 
-export const photoUrl = (photo, width = 1600) => `${HOST}/${photo.id}-${nearest(width)}.jpeg`;
+export const photoUrl = (photo, width = 1600) => `${HOST}/${photo.id}-${nearest(width)}.webp`;
 
 export const photoSrcSet = (photo, widths = FAMILY) =>
-  widths.map((w) => `${HOST}/${photo.id}-${w}.jpeg ${w}w`).join(", ");
+  widths.map((w) => `${HOST}/${photo.id}-${w}.webp ${w}w`).join(", ");
 
 const p = (id, alt) => ({ id, alt });
 
