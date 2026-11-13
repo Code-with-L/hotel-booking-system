@@ -1,7 +1,5 @@
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { gsap } from "@/animations/gsap.js";
-import { heroIntro } from "@/animations/hero.js";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle.js";
 import { IMAGES } from "@/data/images.js";
 import { ROOMS } from "@/data/rooms.js";
@@ -16,11 +14,25 @@ export default function Home() {
   const heroRef = useRef(null);
   useDocumentTitle("");
 
-  useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      heroIntro(heroRef.current);
-    }, heroRef);
-    return () => ctx.revert();
+  // Load GSAP off the critical path: the hero renders in its final state
+  // and the intro animates in when the (small, ~28 KB gz) lazy chunk arrives.
+  useEffect(() => {
+    let ctx;
+    let canceled = false;
+    (async () => {
+      const [{ heroIntro }, { gsap }] = await Promise.all([
+        import("@/animations/hero.js"),
+        import("@/animations/gsap.js"),
+      ]);
+      if (canceled) return;
+      ctx = gsap.context(() => {
+        heroIntro(heroRef.current);
+      }, heroRef);
+    })();
+    return () => {
+      canceled = true;
+      ctx?.revert();
+    };
   }, []);
 
   return (
