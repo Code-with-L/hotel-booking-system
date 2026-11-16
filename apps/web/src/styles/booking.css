@@ -601,3 +601,9 @@
 /* dark-tinted descendants of .on-dark/.footer-cols must not wash the label out (WCAG AA vs #25d366) */
 .on-dark .whatsapp-btn, .footer-cols .whatsapp-btn, .site-footer .whatsapp-btn { color: #0c2b18; }
 .whatsapp-btn:hover { background: #1fb855; color: #0c2b18; }
+
+.avail__estimate { width: 100%; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 14px 4px; margin: 0; }
+.avail__estimate strong { font-family: var(--font-display); font-size: 1.35rem; color: var(--ink); letter-spacing: 0.02em; }
+.avail__estimate-note { display: flex; flex-direction: column; gap: 2px; color: var(--stone); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.avail__label-note { opacity: 0.6; font-weight: 400; letter-spacing: 0.04em; text-transform: lowercase; margin-left: 8px; }
+

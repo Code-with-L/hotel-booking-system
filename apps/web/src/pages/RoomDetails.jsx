@@ -64,6 +64,7 @@ export default function RoomDetails() {
             <AvailabilityBar
               variant="panel"
               submitLabel="Check these dates"
+              fromPriceMinor={room.fromPrice * 100}
               onSearch={(s) => navigate(`/availability?${searchToQuery(s)}&room=${room.slug}`)}
             />
           </aside>

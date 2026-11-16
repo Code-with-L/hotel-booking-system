@@ -12,7 +12,7 @@ export const availabilityQuerySchema = z.object({
   rooms: z.coerce.number().int().min(1).max(4).default(1),
 }).refine((d) => d.checkOut > d.checkIn, { message: 'checkOut must be after checkIn', path: ['checkOut'] })
   .refine((d) => Math.round((new Date(d.checkOut) - new Date(d.checkIn)) / 86400000) <= 14, { message: 'Stays longer than 14 nights cannot be booked online', path: ['checkOut'] })
-  .refine((d) => d.adults <= d.rooms * 2 && d.children <= d.rooms * 2, { message: 'Each room sleeps up to 2 adults and 2 children', path: ['adults'] });
+  .refine((d) => d.adults <= d.rooms * 4 && d.children <= d.rooms * 2, { message: 'Each room sleeps up to 4 adults and 2 children', path: ['adults'] });
 
 export const quoteRequestSchema = z.object({
   roomTypeSlug: z.string().min(1),
@@ -24,7 +24,7 @@ export const quoteRequestSchema = z.object({
   rooms: z.number().int().min(1).max(4).default(1),
 }).refine((d) => d.checkOut > d.checkIn, { message: 'checkOut must be after checkIn', path: ['checkOut'] })
   .refine((d) => Math.round((new Date(d.checkOut) - new Date(d.checkIn)) / 86400000) <= 14, { message: 'Stays longer than 14 nights cannot be booked online', path: ['checkOut'] })
-  .refine((d) => d.adults <= d.rooms * 2 && d.children <= d.rooms * 2, { message: 'Each room sleeps up to 2 adults and 2 children', path: ['adults'] });
+  .refine((d) => d.adults <= d.rooms * 4 && d.children <= d.rooms * 2, { message: 'Each room sleeps up to 4 adults and 2 children', path: ['adults'] });
 
 export const guestSchema = z.object({
   firstName: z.string().trim().min(1, 'First name is required').max(100),
@@ -49,7 +49,7 @@ export const createReservationSchema = z.object({
   source: z.enum(['web', 'admin', 'phone']).default('web'),
 }).refine((d) => d.checkOut > d.checkIn, { message: 'checkOut must be after checkIn', path: ['checkOut'] })
   .refine((d) => Math.round((new Date(d.checkOut) - new Date(d.checkIn)) / 86400000) <= 14, { message: 'Stays longer than 14 nights cannot be booked online', path: ['checkOut'] })
-  .refine((d) => d.adults <= d.rooms * 2 && d.children <= d.rooms * 2, { message: 'Each room sleeps up to 2 adults and 2 children', path: ['adults'] });
+  .refine((d) => d.adults <= d.rooms * 4 && d.children <= d.rooms * 2, { message: 'Each room sleeps up to 4 adults and 2 children', path: ['adults'] });
 
 export const signInSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
@@ -161,3 +161,4 @@ export const enquirySchema = z.object({
 export const newsletterSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
 });
+

@@ -49,7 +49,7 @@ export const ROOMS = [
       "Furnishing is deliberately reduced: a low king-size bed dressed in natural linen, a workspace by the window, and a bathroom finished in the same stone as the paths outside.",
     ],
     size: 42,
-    occupancy: { adults: 2, label: "2 adults" },
+    occupancy: { adults: 4, label: "4 adults" },
     bed: "One king-size bed",
     view: "Garden and acacia canopy",
     fromPrice: 28000,
@@ -76,7 +76,7 @@ export const ROOMS = [
       "A separate sitting area and a generous terrace give the suite the feeling of a small private house — somewhere to stay in, as much as somewhere to sleep.",
     ],
     size: 68,
-    occupancy: { adults: 2, label: "2 adults" },
+    occupancy: { adults: 4, label: "4 adults" },
     bed: "One king-size bed",
     view: "Rift Valley escarpment",
     fromPrice: 42000,
@@ -103,7 +103,7 @@ export const ROOMS = [
       "A soaking tub sits beside the glass, so the valley is part of the evening ritual. Breakfast arrives quietly and is taken wherever the light is best.",
     ],
     size: 96,
-    occupancy: { adults: 2, label: "2 adults" },
+    occupancy: { adults: 4, label: "4 adults" },
     bed: "One king-size bed",
     view: "Widest valley outlook on the property",
     fromPrice: 65000,
@@ -123,3 +123,4 @@ export const ROOMS = [
 export const getRoom = (slug) => ROOMS.find((r) => r.slug === slug);
 export const getRatePlan = (id) => RATE_PLANS.find((r) => r.id === id);
 export const getAmenity = (id) => AMENITIES.find((a) => a.id === id);
+
