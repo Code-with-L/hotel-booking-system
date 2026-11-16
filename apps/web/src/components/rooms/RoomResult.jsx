@@ -15,7 +15,7 @@ export default function RoomResult({ result, nights, onSelect }) {
           <ul className="result__meta">
             <li>{room.occupancy.label}</li>
             <li>{room.size} m²</li>
-            <li>{room.bed}</li>
+            <li>{room.bedLabel}</li>
             <li>{room.view}</li>
           </ul>
           <Link className="link-arrow" to={`/rooms/${room.slug}`}>

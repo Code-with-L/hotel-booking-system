@@ -38,7 +38,6 @@ export function validateSearch({ checkIn, checkOut, adults, children, rooms }) {
   if (adults < 1) e.adults = "At least one adult.";
   if (rooms < 1) e.rooms = "At least one room.";
   if (children < 0) e.children = "Invalid.";
-  if (rooms >= 1 && adults > rooms * 4) e.adults = "Each room sleeps up to 4 adults. Pick more rooms or fewer guests.";
   if (rooms >= 1 && children > rooms * 2) e.children = "Up to two children per room, please.";
   return e;
 }

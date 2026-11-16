@@ -4,6 +4,10 @@
  */
 import { IMAGES } from "./images.js";
 
+/** Compute sleeping capacity from a beds list. King/queen/double = 2, single = 1. Never type capacity by hand. */
+export const BED_CAPACITY = { king: 2, queen: 2, double: 2, single: 1 };
+export const capacityOf = (beds) => beds.reduce((sum, bed) => sum + (BED_CAPACITY[bed.type] || 0) * bed.count, 0);
+
 export const AMENITIES = [
   { id: "bed", label: "King-size bed", icon: "BedDouble" },
   { id: "terrace", label: "Private terrace", icon: "Trees" },
@@ -36,7 +40,7 @@ export const RATE_PLANS = [
   },
 ];
 
-export const ROOMS = [
+const RAW_ROOMS = [
   {
     slug: "garden-room",
     number: "01",
@@ -49,11 +53,11 @@ export const ROOMS = [
       "Furnishing is deliberately reduced: a low king-size bed dressed in natural linen, a workspace by the window, and a bathroom finished in the same stone as the paths outside.",
     ],
     size: 42,
-    occupancy: { adults: 4, label: "4 adults" },
-    bed: "One king-size bed",
+    beds: [{ type: "king", count: 1 }],
+    bedLabel: "One king-size bed",
     view: "Garden and acacia canopy",
     fromPrice: 28000,
-    unitCount: 14,
+    unitCount: 12,
     hero: IMAGES.gardenHero,
     gallery: [IMAGES.gardenHero, IMAGES.gardenA, IMAGES.gardenB, IMAGES.gardenC, IMAGES.gardenD],
     amenities: ["bed", "terrace", "shower", "climate", "wifi", "refreshments", "workspace", "bath"],
@@ -65,8 +69,35 @@ export const ROOMS = [
     ],
   },
   {
-    slug: "valley-suite",
+    slug: "garden-twin",
     number: "02",
+    name: "The Garden Twin",
+    tagline: "Two queens, one garden.",
+    summary:
+      "The Garden Room's wider sibling. Two queen beds in the same planted setting, breathing room in place of austerity.",
+    description: [
+      "The Garden Twin keeps the Garden Room's low ceiling, pale stone and generous glass — but splits the single bed in two. Two queen beds face each other across a quiet stretch of timber floor.",
+      "Ideal for families or friends travelling together: one room, two real beds, the same full-height terrace doors opening to the garden.",
+    ],
+    size: 46,
+    beds: [{ type: "queen", count: 2 }],
+    bedLabel: "Two queen beds",
+    view: "Garden and acacia canopy",
+    fromPrice: 34000,
+    unitCount: 2,
+    hero: IMAGES.gardenA,
+    gallery: [IMAGES.gardenA, IMAGES.gardenHero, IMAGES.gardenB, IMAGES.gardenC, IMAGES.gardenD],
+    amenities: ["bed", "terrace", "shower", "climate", "wifi", "refreshments", "workspace", "bath"],
+    features: [
+      "Two queen beds — sleeps four",
+      "Full-height sliding glass onto a private terrace",
+      "More space for luggage, chairs and slow mornings",
+      "Garden outlook from both beds",
+    ],
+  },
+  {
+    slug: "valley-suite",
+    number: "03",
     name: "The Valley Suite",
     tagline: "A long view, held at a distance.",
     summary:
@@ -76,11 +107,11 @@ export const ROOMS = [
       "A separate sitting area and a generous terrace give the suite the feeling of a small private house — somewhere to stay in, as much as somewhere to sleep.",
     ],
     size: 68,
-    occupancy: { adults: 4, label: "4 adults" },
-    bed: "One king-size bed",
+    beds: [{ type: "king", count: 1 }],
+    bedLabel: "One king-size bed",
     view: "Rift Valley escarpment",
     fromPrice: 42000,
-    unitCount: 9,
+    unitCount: 7,
     hero: IMAGES.valleyHero,
     gallery: [IMAGES.valleyHero, IMAGES.valleyA, IMAGES.valleyB, IMAGES.valleyC, IMAGES.valleyD],
     amenities: ["bed", "terrace", "shower", "climate", "wifi", "refreshments", "workspace", "bath"],
@@ -92,8 +123,35 @@ export const ROOMS = [
     ],
   },
   {
+    slug: "valley-cottage",
+    number: "04",
+    name: "The Valley Cottage",
+    tagline: "The valley, its own address.",
+    summary:
+      "The Valley Suite's generous sibling. Three double beds under a skylit roof, a sitting room, and a terrace that belongs entirely to you — sleeps six.",
+    description: [
+      "The Valley Cottage takes everything the Valley Suite is and scales it honestly: three double beds, a dedicated sitting area, and the same escarpment outlook, from a freestanding cottage set slightly apart from the main roofline.",
+      "A natural fit for families or small groups travelling together — one booking, three beds, breakfast delivered to the terrace, evenings at the firepit outside.",
+    ],
+    size: 82,
+    beds: [{ type: "double", count: 3 }],
+    bedLabel: "Three double beds",
+    view: "Rift Valley escarpment",
+    fromPrice: 48000,
+    unitCount: 2,
+    hero: IMAGES.valleyA,
+    gallery: [IMAGES.valleyA, IMAGES.valleyHero, IMAGES.valleyB, IMAGES.valleyC, IMAGES.valleyD],
+    amenities: ["bed", "terrace", "shower", "climate", "wifi", "refreshments", "workspace", "bath"],
+    features: [
+      "Three double beds — sleeps six",
+      "Freestanding cottage with the same escarpment outlook",
+      "Separate sitting area and private firepit",
+      "Plush workspace for guests working from the valley",
+    ],
+  },
+  {
     slug: "signature-retreat",
-    number: "03",
+    number: "05",
     name: "The Signature Retreat",
     tagline: "The whole horizon, entirely to yourself.",
     summary:
@@ -103,8 +161,8 @@ export const ROOMS = [
       "A soaking tub sits beside the glass, so the valley is part of the evening ritual. Breakfast arrives quietly and is taken wherever the light is best.",
     ],
     size: 96,
-    occupancy: { adults: 4, label: "4 adults" },
-    bed: "One king-size bed",
+    beds: [{ type: "king", count: 1 }],
+    bedLabel: "One king-size bed",
     view: "Widest valley outlook on the property",
     fromPrice: 65000,
     unitCount: 5,
@@ -119,6 +177,14 @@ export const ROOMS = [
     ],
   },
 ];
+
+export const ROOMS = RAW_ROOMS.map((r) => {
+  const capacity = capacityOf(r.beds);
+  return { ...r, capacity, occupancy: { adults: capacity, label: `${capacity} adults` } };
+});
+
+/** Largest sleeping capacity of any single room in the catalogue — the upper bound for a one-room party. */
+export const MAX_ROOM_CAPACITY = Math.max(...ROOMS.map((r) => r.capacity));
 
 export const getRoom = (slug) => ROOMS.find((r) => r.slug === slug);
 export const getRatePlan = (id) => RATE_PLANS.find((r) => r.id === id);

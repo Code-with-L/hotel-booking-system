@@ -19,7 +19,6 @@ export const SITE = {
 
 export const MAX_NIGHTS = 14;
 export const MAX_ROOMS_PER_BOOKING = 4;
-export const MAX_ADULTS_PER_ROOM = 4;
 export const MAX_CHILDREN_PER_ROOM = 2;
 
 export const COUNTRIES = [

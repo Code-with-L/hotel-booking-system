@@ -12,8 +12,8 @@ export function parseSearchParams(params) {
   return {
     checkIn,
     checkOut,
-    adults: int("adults", 1, 8, 2),
-    children: int("children", 0, 4, 0),
+    adults: int("adults", 1, 24, 1),
+    children: int("children", 0, 8, 0),
     rooms: int("rooms", 1, 4, 1),
   };
 }

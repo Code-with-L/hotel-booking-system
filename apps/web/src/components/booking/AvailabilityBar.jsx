@@ -5,7 +5,8 @@ import { useBooking } from "@/features/reservations/BookingContext.jsx";
 import { addDays, todayISO } from "@/utils/dates.js";
 import { validateSearch } from "@/utils/validators.js";
 import { formatKsh, pluralise } from "@/utils/format.js";
-import { MAX_NIGHTS, MAX_ROOMS_PER_BOOKING, MAX_ADULTS_PER_ROOM, MAX_CHILDREN_PER_ROOM } from "@/data/site.js";
+import { MAX_NIGHTS, MAX_ROOMS_PER_BOOKING, MAX_CHILDREN_PER_ROOM } from "@/data/site.js";
+import { MAX_ROOM_CAPACITY } from "@/data/rooms.js";
 
 export const searchToQuery = (s) =>
   new URLSearchParams({
@@ -57,7 +58,7 @@ export default function AvailabilityBar({ variant = "bar", initial, onSearch, su
   const patch = (p) => setValues((v) => {
     const next = { ...v, ...p };
     if ("rooms" in p) {
-      const cap = next.rooms * MAX_ADULTS_PER_ROOM;
+      const cap = next.rooms * MAX_ROOM_CAPACITY;
       const capChildren = next.rooms * MAX_CHILDREN_PER_ROOM;
       if (next.adults > cap) next.adults = cap;
       if (next.children > capChildren) next.children = capChildren;
@@ -93,10 +94,10 @@ export default function AvailabilityBar({ variant = "bar", initial, onSearch, su
   };
 
   const firstError = Object.values(errors)[0];
-  const maxAdults = values.rooms * MAX_ADULTS_PER_ROOM;
+  const maxAdults = values.rooms * MAX_ROOM_CAPACITY;
   const maxChildren = values.rooms * MAX_CHILDREN_PER_ROOM;
   // Once rooms hold adults, decreasing rooms is refused if it would leave some adults without a bed.
-  const roomsCanDecrease = values.rooms > 1 && (values.rooms - 1) * MAX_ADULTS_PER_ROOM >= values.adults && (values.rooms - 1) * MAX_CHILDREN_PER_ROOM >= values.children;
+  const roomsCanDecrease = values.rooms > 1 && (values.rooms - 1) * MAX_ROOM_CAPACITY >= values.adults && (values.rooms - 1) * MAX_CHILDREN_PER_ROOM >= values.children;
 
   return (
     <form className={`avail avail--${variant}`} onSubmit={submit} noValidate aria-label="Check availability" data-hero-bar-form>

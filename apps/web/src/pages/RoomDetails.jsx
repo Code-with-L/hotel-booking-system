@@ -32,7 +32,7 @@ export default function RoomDetails() {
           <dl className="room-hero__meta">
             <div><dt className="meta">Size</dt><dd>{room.size} m²</dd></div>
             <div><dt className="meta">Occupancy</dt><dd>{room.occupancy.label}</dd></div>
-            <div><dt className="meta">Bed</dt><dd>{room.bed}</dd></div>
+            <div><dt className="meta">Bed</dt><dd>{room.bedLabel}</dd></div>
           </dl>
         </div>
       </header>
@@ -50,7 +50,7 @@ export default function RoomDetails() {
             <dl className="ledger ledger--wide">
               <div><dt>Dimensions</dt><dd>Approx. {room.size} m²</dd></div>
               <div><dt>Guest capacity</dt><dd>{room.occupancy.label}</dd></div>
-              <div><dt>Bed configuration</dt><dd>{room.bed}</dd></div>
+              <div><dt>Bed configuration</dt><dd>{room.bedLabel}</dd></div>
               <div><dt>Outlook</dt><dd>{room.view}</dd></div>
             </dl>
           </div>
