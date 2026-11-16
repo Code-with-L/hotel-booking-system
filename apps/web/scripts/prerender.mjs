@@ -53,12 +53,12 @@ for (const url of routes) {
     }
     const out = url === "/" ? resolve(dist, "index.html") : resolve(dist, url.slice(1), "index.html");
     mkdirSync(dirname(out), { recursive: true });
-    // Strip React Router's inline hydration script: the client boots its own
-    // BrowserRouter via main.jsx, and our strict CSP (script-src 'self') must
-    // not carry an inline-script hash that can change with every render.
+    // Strip React Router's inline hydration script (it is part of the SSR html,
+    // not the template): the client boots its own BrowserRouter via main.jsx,
+    // and our strict CSP (script-src 'self') must not carry an inline script.
     const page = template
-      .replace(/<script>window\.__staticRouterHydrationData[^<]*<\/script>/, "")
-      .replace('<div id="root"></div>', `<div id="root">${html}</div>`);
+      .replace('<div id="root"></div>', `<div id="root">${html}</div>`)
+      .replace(/<script>window\.__staticRouterHydrationData[^<]*<\/script>/, "");
     writeFileSync(out, page);
     console.log(`prerendered ${url} (${status})`);
   } catch (err) {
