@@ -4,7 +4,7 @@
  * instead of an empty #root. Dynamic pages (booking steps, account) are
  * intentionally left as the SPA shell.
  */
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -53,7 +53,13 @@ for (const url of routes) {
     }
     const out = url === "/" ? resolve(dist, "index.html") : resolve(dist, url.slice(1), "index.html");
     mkdirSync(dirname(out), { recursive: true });
-    writeFileSync(out, template.replace('<div id="root"></div>', `<div id="root">${html}</div>`));
+    // Strip React Router's inline hydration script: the client boots its own
+    // BrowserRouter via main.jsx, and our strict CSP (script-src 'self') must
+    // not carry an inline-script hash that can change with every render.
+    const page = template
+      .replace(/<script>window\.__staticRouterHydrationData[^<]*<\/script>/, "")
+      .replace('<div id="root"></div>', `<div id="root">${html}</div>`);
+    writeFileSync(out, page);
     console.log(`prerendered ${url} (${status})`);
   } catch (err) {
     console.error(`prerender: FAILED ${url}: ${err?.message ?? err}`);
