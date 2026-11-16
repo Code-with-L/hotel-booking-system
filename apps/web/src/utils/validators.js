@@ -31,8 +31,14 @@ export function validateSearch({ checkIn, checkOut, adults, children, rooms }) {
   if (!checkIn) e.checkIn = "Choose a check-in date.";
   if (!checkOut) e.checkOut = "Choose a check-out date.";
   if (checkIn && checkOut && checkOut <= checkIn) e.checkOut = "Check-out must be after check-in.";
+  if (checkIn && checkOut && checkOut > checkIn) {
+    const nights = Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000);
+    if (nights > 14) e.checkOut = "Stays longer than 14 nights can't be booked online. Please contact the front desk.";
+  }
   if (adults < 1) e.adults = "At least one adult.";
   if (rooms < 1) e.rooms = "At least one room.";
   if (children < 0) e.children = "Invalid.";
+  if (rooms >= 1 && adults > rooms * 2) e.adults = "Each room sleeps up to 2 adults. Pick more rooms or fewer guests.";
+  if (rooms >= 1 && children > rooms * 2) e.children = "Up to two children per room, please.";
   return e;
 }

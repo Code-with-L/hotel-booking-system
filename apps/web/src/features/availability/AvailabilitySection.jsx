@@ -74,7 +74,7 @@ export default function AvailabilitySection({
           key={JSON.stringify(current)}
           initial={current}
           variant="bar"
-          submitLabel="Update dates"
+          submitLabel="Check availability"
           onSearch={(s) => setParams(searchToQuery(s))}
         />
       </div>
