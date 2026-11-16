@@ -650,3 +650,5 @@
 .panel-total__sum .block { display: block; }
 .booking-panel__cta { width: 100%; }
 .panel-suggestion__link { color: var(--olive); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.bar-strip__inner { display: grid; gap: 16px; padding-block: 4px; }
+.bar-strip__cta { justify-self: end; }

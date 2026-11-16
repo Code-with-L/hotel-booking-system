@@ -15,10 +15,12 @@
       "buildCommand": "cd ../.. && npx prisma generate && node scripts/inline-wasm.mjs",
       "functions": {
         "src/app.js": {
-          "includeFiles": "src/generated/prisma/**"
+          "includeFiles": "src/generated/prisma/**",
+          "regions": ["fra1"]
         },
         "apps/api/src/app.js": {
-          "includeFiles": "apps/api/src/generated/prisma/**"
+          "includeFiles": "apps/api/src/generated/prisma/**",
+          "regions": ["fra1"]
         }
       }
     }

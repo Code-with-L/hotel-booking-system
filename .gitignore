@@ -25,3 +25,4 @@ deploy/certs/
 # Regenerate locally with `npx prisma generate` after schema changes; never commit native engines.
 apps/api/src/generated/prisma/*.dll.node
 apps/api/src/generated/prisma/*.so.node
+dist-ssr/

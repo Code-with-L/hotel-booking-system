@@ -4,7 +4,7 @@
  *   selection  { roomSlug, roomName, ratePlanId, ratePlanName, nightly, nights, image }
  *   guest      { firstName, lastName, email, phone, country, requests, privacy }
  */
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { session } from "@/utils/storage.js";
 import { addDays, todayISO } from "@/utils/dates.js";
 
@@ -18,22 +18,27 @@ export const defaultSearch = () => ({
   rooms: 1,
 });
 
-const initial = () => {
-  const saved = session.get(KEY, null);
-  // Never initialise the booking form from a saved draft — the party starts
-  // fresh (1/0/1) every visit; only an explicit choice this session, a URL
-  // param, or the guest-details/review pages use the draft.
-  return {
-    search: defaultSearch(),
-    selection: saved?.selection || null,
-    guest: saved?.guest || null,
-  };
-};
+const initial = () => ({
+  // Server-rendered and first client paint must match exactly: always start
+  // from the same defaults. A saved draft (party/guest) is adopted only
+  // after mount, see effect below.
+  search: defaultSearch(),
+  selection: null,
+  guest: null,
+});
 
 const BookingContext = createContext(null);
 
 export function BookingProvider({ children }) {
   const [state, setState] = useState(initial);
+
+  // Adopt the saved draft after mount (never before), so hydration matches the prerendered HTML.
+  useEffect(() => {
+    const saved = session.get(KEY, null);
+    if (saved && (saved.selection || saved.guest)) {
+      setState((prev) => ({ ...prev, selection: saved.selection ?? prev.selection, guest: saved.guest ?? prev.guest }));
+    }
+  }, []);
 
   const update = useCallback((patch) => {
     setState((prev) => {

@@ -1,5 +1,5 @@
 import PageHero from "@/components/editorial/PageHero.jsx";
-import AvailabilityBar from "@/components/booking/AvailabilityBar.jsx";
+import AvailabilityBarLink from "@/components/booking/AvailabilityBarLink.jsx";
 import RoomListing from "@/components/rooms/RoomListing.jsx";
 import AmenityIcon from "@/components/rooms/AmenityIcon.jsx";
 
@@ -12,12 +12,12 @@ export default function Rooms() {
   return (
     <>
       <PageHero title={<>Find your own kind of <em>stillness.</em></>}>
-        <p className="lede">Twenty-eight rooms. Three distinct expressions of retreat.</p>
+        <p className="lede">Twenty-eight rooms. Five distinct expressions of retreat.</p>
       </PageHero>
 
       <section className="bar-strip" aria-label="Search availability">
         <div className="container">
-          <AvailabilityBar variant="bar" />
+          <AvailabilityBarLink />
         </div>
       </section>
 

@@ -79,7 +79,7 @@ export default function AvailabilityBar({ variant = "bar", values, onChange }) {
     <div className={`avail avail--${variant}`} aria-label="Booking search" data-hero-bar-form>
       <div className="avail__field">
         <label className="avail__label" htmlFor={`${uid}-in`}>Check-in</label>
-        <input id={`${uid}-in`} type="date" min={today} value={values.checkIn} onChange={onCheckIn} />
+        <input id={`${uid}-in`} type="date" min={today} value={values.checkIn} onChange={onCheckIn} suppressHydrationWarning />
       </div>
       <div className="avail__field">
         <label className="avail__label" htmlFor={`${uid}-out`}>Check-out <span className="avail__label-note">max {MAX_NIGHTS} nights</span></label>
@@ -90,6 +90,7 @@ export default function AvailabilityBar({ variant = "bar", values, onChange }) {
           max={maxCheckOut}
           value={values.checkOut}
           onChange={(e) => patch({ checkOut: e.target.value })}
+          suppressHydrationWarning
         />
       </div>
       <Stepper label="Rooms" value={values.rooms} min={1} max={MAX_ROOMS_PER_BOOKING} onChange={(rooms) => patch({ rooms })} id={`${uid}-rm-label`} disabledMin={!roomsCanDecrease} />

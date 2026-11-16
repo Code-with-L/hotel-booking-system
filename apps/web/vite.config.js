@@ -10,20 +10,22 @@ const proxy = {
   },
 };
 
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
   plugins: [react()],
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   server: { port: 5173, proxy },
   preview: { port: 4173, proxy },
-  build: {
-    // Split stable vendor code from app code for better caching/loading (build-time only, no design change)
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          react: ["react", "react-dom", "react-router-dom"],
-          gsap: ["gsap"],
+  build: isSsrBuild
+    ? { outDir: "dist-ssr" }
+    : {
+        rollupOptions: {
+          output: {
+            // Split stable vendor code from app code for better caching/loading (build-time only, no design change)
+            manualChunks: {
+              react: ["react", "react-dom", "react-router-dom"],
+              gsap: ["gsap"],
+            },
+          },
         },
       },
-    },
-  },
-});
+}));

@@ -82,7 +82,7 @@ export default function AvailabilitySection({
       <header className="booking-head">
         <p className="eyebrow eyebrow--olive">Availability</p>
         <Heading className="h-xl">{title}</Heading>
-        <p className="lede">
+        <p className="lede" suppressHydrationWarning>
           {lede ?? `${formatShort(values.checkIn)} – ${formatShort(values.checkOut)} · ${pluralise(nights, "night")} · ${pluralise(values.adults, "adult")}${values.children > 0 ? `, ${pluralise(values.children, "child", "children")}` : ""} · ${pluralise(values.rooms, "room")}`}
         </p>
       </header>
