@@ -17,6 +17,11 @@ export const SITE = {
   whatsappMessage: "Hi! I'd like to ask about booking at The Stillhouse.",
 };
 
+export const MAX_NIGHTS = 14;
+export const MAX_ROOMS_PER_BOOKING = 4;
+export const MAX_ADULTS_PER_ROOM = 2;
+export const MAX_CHILDREN_PER_ROOM = 2;
+
 export const COUNTRIES = [
   "Kenya", "Tanzania", "Uganda", "Rwanda", "Ethiopia", "South Africa", "Nigeria", "Egypt",
   "United Kingdom", "Ireland", "France", "Germany", "Italy", "Spain", "Netherlands",
