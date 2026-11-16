@@ -11,17 +11,20 @@ import { addDays, todayISO } from "@/utils/dates.js";
 const KEY = "stillhouse.booking";
 
 export const defaultSearch = () => ({
-  checkIn: addDays(todayISO(), 21),
-  checkOut: addDays(todayISO(), 24),
-  adults: 2,
+  checkIn: todayISO(),
+  checkOut: addDays(todayISO(), 1),
+  adults: 1,
   children: 0,
   rooms: 1,
 });
 
 const initial = () => {
   const saved = session.get(KEY, null);
+  // Never initialise the booking form from a saved draft — the party starts
+  // fresh (1/0/1) every visit; only an explicit choice this session, a URL
+  // param, or the guest-details/review pages use the draft.
   return {
-    search: saved?.search || defaultSearch(),
+    search: defaultSearch(),
     selection: saved?.selection || null,
     guest: saved?.guest || null,
   };

@@ -98,7 +98,7 @@ export default function Home() {
                     <div className="home-room-card__foot">
                       <span className="meta">From</span>
                       <span className="price">{formatKsh(room.fromPrice)}<small> / night</small></span>
-                      <span className="home-room-card__cta">Check dates →</span>
+                      <span className="home-room-card__cta">See this room →</span>
                     </div>
                   </div>
                 </Link>

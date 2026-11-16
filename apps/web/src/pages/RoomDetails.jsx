@@ -1,7 +1,7 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { getAmenity, getRoom, RATE_PLANS } from "@/data/rooms.js";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle.js";
-import AvailabilityBar, { searchToQuery } from "@/components/booking/AvailabilityBar.jsx";
+import RoomAvailabilityPanel from "@/components/rooms/RoomAvailabilityPanel.jsx";
 import RoomGallery from "@/components/rooms/RoomGallery.jsx";
 import RelatedRooms from "@/components/rooms/RelatedRooms.jsx";
 import AmenityIcon from "@/components/rooms/AmenityIcon.jsx";
@@ -14,7 +14,6 @@ import { formatKsh } from "@/utils/format.js";
 export default function RoomDetails() {
   const { slug } = useParams();
   const room = getRoom(slug);
-  const navigate = useNavigate();
   useDocumentTitle(room?.name);
 
   if (!room) return <NotFound />;
@@ -60,13 +59,8 @@ export default function RoomDetails() {
             <p className="booking-panel__price" id="panel-title">
               <span className="numeral">{formatKsh(room.fromPrice)}</span>
             </p>
-            <p className="small">From rate per room, before taxes and fees. Final price is computed at review.</p>
-            <AvailabilityBar
-              variant="panel"
-              submitLabel="Check these dates"
-              fromPriceMinor={room.fromPrice * 100}
-              onSearch={(s) => navigate(`/availability?${searchToQuery(s)}&room=${room.slug}`)}
-            />
+            <p className="small">Rate from, before taxes and fees. The exact total — room, service charge, tourism levy and VAT — is shown below once your dates are checked.</p>
+            <RoomAvailabilityPanel room={room} />
           </aside>
         </div>
       </section>
